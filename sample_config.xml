@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <!-- 
+        Mandatory parameters. 
+    -->
+    <!-- <source> - a connection string to your MySql database. -->
+    <source>mysql:host=localhost;port=3306;dbname=your_db_name,root,123456</source>
+    
+    <!-- <target> - a connection string to your PostgreSql database. -->
+    <target>pgsql:host=localhost;port=5432;dbname=your_pg_db,postgres,123456789</target>
+    
+    <!-- 
+        <temporary_directory> - a path to temporary directory, that will be used 
+        during migration only. When the migration will be accomplished the  
+        'temporary_directory' will be deleted.  
+    -->
+    <temporary_directory>/path/to/migration/your_temporary_directory</temporary_directory>
+    
+    <!-- 
+        Optional parameters. 
+    -->
+    <!-- 
+        <encoding> - an encoding type of your PostgreSql database. If not supplied, 
+        then UTF-8 will be used as a default. 
+    -->
+    <encoding>UTF-8</encoding>
+    
+    <!-- 
+        <write_common_log_to> - a path to a text file, which will be created and 
+        filled with logs and error messages during migration. If not supplied, 
+        then no 'common_log' file will be created. 
+    -->
+    <write_common_log_to>/path/to/migration/yourcommonlogfile.txt</write_common_log_to>
+    
+    <!-- 
+        <write_error_log_to> - a path to a text file, which will be created and 
+        filled with error_logs only. 
+        If not supplied, then no 'error_log' file will be created. 
+    -->
+    <write_error_log_to>/path/to/migration/yourlogfile.txt</write_error_log_to>
+    
+    <!-- 
+        <write_summary_report_to> - a path to a text file, which will be created and 
+        filled with a summary report , a grid of migration statistics.
+        If not supplied, then no 'summary_report' file will be created. 
+    -->
+    <write_summary_report_to>/path/to/migration/yourreportfile.txt</write_summary_report_to>
+</root>
