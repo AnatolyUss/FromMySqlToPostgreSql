@@ -48,7 +48,7 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
    <p><b>Sample:</b> /path/to/config.json or /path/to/config.xml</p>
    <p>Remarks:</p>
    <ul>
-   <li> sample_config.json or sample_config.xml are examples of configuration
+   <li> sample_config.json and sample_config.xml are examples of configuration
       file, so you can edit one of them and use for migration.</li> 
       
    <li> Brief description of each configuration parameter will be found at 
