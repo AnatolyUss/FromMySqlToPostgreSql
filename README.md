@@ -1,28 +1,29 @@
-FromMySqlToPostgreSql - the database migration tool.
+<h3>FromMySqlToPostgreSql - the database migration tool.</h3>
 
-WHAT IS IT ALL ABOUT?
-FromMySqlToPostgreSql is a tool, intended to make a process of migration 
-from MySql to PostgreSql as easy and smooth as possible.
+<h3>WHAT IS IT ALL ABOUT?</h3>
+<p>FromMySqlToPostgreSql is a tool, intended to make a process of migration 
+from MySql to PostgreSql as easy and smooth as possible.</p>
 
 
-KEY FEATURES 
-1. Ease of use - the only thing needed to run this script is the PHP(CLI) interpreter.
+<h3>KEY FEATURES </h3>
+<ul>
+<li> Ease of use - the only thing needed to run this script is the PHP(CLI) interpreter.</li>
    
-2. Accuracy of migration the database structure - FromMySqlToPostgreSql converts 
+<li> Accuracy of migration the database structure - FromMySqlToPostgreSql converts 
    MySql data types to corresponding PostgreSql data types, creates constraints,
-   indeces, primary and foreign keys exactly as they were before migration.
+   indeces, primary and foreign keys exactly as they were before migration.</li>
 
-3. In order to migrate data fast - FromMySqlToPostgreSql uses PostgreSQL COPY protocol.
+<li> In order to migrate data fast - FromMySqlToPostgreSql uses PostgreSQL COPY protocol.
    Note: migration of tables, containing "varbinary" or "blob" columns may be 
-   considerably slower.
+   considerably slower.</li>
 
-4. Ease of monitoring - FromMySqlToPostgreSql will provide detailed output
-   about every step, it takes during the execution.
+<li> Ease of monitoring - FromMySqlToPostgreSql will provide detailed output
+   about every step, it takes during the execution.</li>
 
-5. Ease of configuration - all the parameters required for migration 
+<li> Ease of configuration - all the parameters required for migration 
    (maximum 7 parameters) should be put in one single file, 
-   which can be in either "xml" or "json" format.
-
+   which can be in either "xml" or "json" format.</li>
+</ul>
 
 SYSTEM REQUIREMENTS
 1. PHP (CLI) 5.4 or above.
