@@ -37,15 +37,15 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
 <h3>USAGE</h3>
 <ul>
 <li> <p>Create a new database.</p>
-   <p>Sample: CREATE DATABASE my_postgresql_database;</p></li>
+   <p><b>Sample:</b> CREATE DATABASE my_postgresql_database;</p></li>
 
 <li> <p>Download FromMySqlToPostgreSql package and put it on the machine running 
    your PostgreSql.</p>
-  <p> Sample: /path/to/FromMySqlToPostgreSql</p></li>
+  <p> <b>Sample:</b> /path/to/FromMySqlToPostgreSql</p></li>
 
 <li> <p>Create configuration file in either "xml" or "json" format and put it on 
    the machine running your PostgreSql. </p>
-   <p>Sample: /path/to/config.json or /path/to/config.xml</p>
+   <p><b>Sample:</b> /path/to/config.json or /path/to/config.xml</p>
    <p>Remarks:</p>
    <ul>
    <li> sample_config.json or sample_config.xml are examples of configuration
@@ -69,19 +69,19 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
 <p>Current version is 1.0.0</p>
 
 
-TEST
-Tested using MySql Community Server (5.6.21) and PostgreSql (9.3).
-The entire process of migration 59.6 MB database (49 tables, 570750 rows), 
+<h3>TEST</h3>
+<p>Tested using MySql Community Server (5.6.21) and PostgreSql (9.3).</p>
+<p>The entire process of migration 59.6 MB database (49 tables, 570750 rows), 
 which includes data types mapping, creation of tables, constraints, indeces, 
 PKs, FKs, migration of data, garbage-collection and analyzing the newly created 
-PostgreSql database took 3 minutes 6 seconds.
+PostgreSql database took 3 minutes 6 seconds.</p>
 
 
-LICENSE
-FromMySqlToPostgreSql is available under "GNU GENERAL PUBLIC LICENSE" (v. 3) 
-<http://www.gnu.org/licenses/gpl.txt>.
+<h3>LICENSE</h3>
+<p>FromMySqlToPostgreSql is available under "GNU GENERAL PUBLIC LICENSE" (v. 3)</p> 
+<p><http://www.gnu.org/licenses/gpl.txt>.</p>
 
 
-REMARKS
-Errors/Exceptions are not passed silently.
-Any error will be immediately written into the error log file.
+<h3>REMARKS</h3>
+<p>Errors/Exceptions are not passed silently.</p>
+<p>Any error will be immediately written into the error log file.</p>
