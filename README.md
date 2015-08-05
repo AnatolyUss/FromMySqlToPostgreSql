@@ -25,42 +25,48 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
    which can be in either "xml" or "json" format.</li>
 </ul>
 
-SYSTEM REQUIREMENTS
-1. PHP (CLI) 5.4 or above.
-2. PDO_MYSQL support.
-3. PDO_PGSQL support.
-4. register_argc_argv should be enabled (check php.ini).
+<h3>SYSTEM REQUIREMENTS</h3>
+<ul>
+<li> PHP (CLI) 5.4 or above.</li>
+<li> PDO_MYSQL support.</li>
+<li> PDO_PGSQL support.</li>
+<li> register_argc_argv should be enabled (check php.ini).</li>
+</ul>
 
 
-USAGE
-1. Create a new database.
-   Sample: CREATE DATABASE my_postgresql_database;
+<h3>USAGE</h3>
+<ul>
+<li> <p>Create a new database.</p>
+   <p>Sample: CREATE DATABASE my_postgresql_database;</p></li>
 
-2. Download FromMySqlToPostgreSql package and put it on the machine running 
-   your PostgreSql.
-   Sample: /path/to/FromMySqlToPostgreSql
+<li> <p>Download FromMySqlToPostgreSql package and put it on the machine running 
+   your PostgreSql.</p>
+  <p> Sample: /path/to/FromMySqlToPostgreSql</p></li>
 
-3. Create configuration file in either "xml" or "json" format and put it on 
-   the machine running your PostgreSql. 
-   Sample: /path/to/config.json or /path/to/config.xml
-   Remarks:
-   1. sample_config.json or sample_config.xml are examples of configuration
-      file, so you can edit one of them and use for migration. 
+<li> <p>Create configuration file in either "xml" or "json" format and put it on 
+   the machine running your PostgreSql. </p>
+   <p>Sample: /path/to/config.json or /path/to/config.xml</p>
+   <p>Remarks:</p>
+   <ul>
+   <li> sample_config.json or sample_config.xml are examples of configuration
+      file, so you can edit one of them and use for migration.</li> 
       
-   2. Brief description of each configuration parameter will be found at 
-      sample_config.json and sample_config.xml
-     
-4. Run the script from a terminal. 
-   Sample: php  /path/to/FromMySqlToPostgreSql/index.php  /path/to/config[.xml | .json]
+   <li> Brief description of each configuration parameter will be found at 
+      sample_config.json and sample_config.xml</li>
+</ul>
+</li>
+
+<li> <p>Run the script from a terminal. </p>
+   <p><b>Sample:</b>&nbsp;&nbsp; php &nbsp;&nbsp; /path/to/FromMySqlToPostgreSql/index.php &nbsp;&nbsp; /path/to/config[.xml | .json]</p></li>
        
-5. At the end of migration check log files (described above) if necessary.
+<li> At the end of migration check log files (described above) if necessary.</li>
 
-6. In case of any remarks, misunderstandings or errors during migration, 
-   please feel free to email me <anatolyuss@gmail.com>.
+<li> In case of any remarks, misunderstandings or errors during migration, 
+   please feel free to email me <anatolyuss@gmail.com>.</li>
+</ul>
 
-
-VERSION
-Current version is 1.0.0
+<h3>VERSION</h3>
+<p>Current version is 1.0.0</p>
 
 
 TEST
