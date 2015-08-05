@@ -79,7 +79,7 @@ PostgreSql database took 3 minutes 6 seconds.</p>
 
 <h3>LICENSE</h3>
 <p>FromMySqlToPostgreSql is available under "GNU GENERAL PUBLIC LICENSE" (v. 3)</p> 
-<p><http://www.gnu.org/licenses/gpl.txt>.</p>
+<p><a href="http://www.gnu.org/licenses/gpl.txt">http://www.gnu.org/licenses/gpl.txt</a>.</p>
 
 
 <h3>REMARKS</h3>
