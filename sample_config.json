@@ -28,17 +28,17 @@
         "Path to a text file, which will be created and filled with error logs only.",
         "If not supplied, then no 'error_log' file will be created."
     ],
-    "write_error_log_to" : "/path/to/migration/yourlogfile.txt",
+    "write_error_log_to" : "/path/to/migration/errors-only.log",
     
     "write_summary_report_to_description" : [
         "Path to a text file, which will be created and filled with a summary report, a grid of migration statistics.",
         "If not supplied, then no 'summary_report' file will be created."
     ],
-    "write_summary_report_to" : "/path/to/migration/yourreportfile.txt",
+    "write_summary_report_to" : "/path/to/migration/report-only.log",
     
     "write_common_log_to_description" : [
         "Path to a text file, which will be created and filled with logs and error messages during migration.",
         "If not supplied, then no 'common_log' file will be created."
     ],
-    "write_common_log_to" : "/path/to/migration/yourcommonlogfile.txt"
+    "write_common_log_to" : "/path/to/migration/all.log"
 }
