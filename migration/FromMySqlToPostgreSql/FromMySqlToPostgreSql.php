@@ -183,12 +183,15 @@ class FromMySqlToPostgreSql
             
             exit;
         }
-        
-        if (!mkdir($arrConfig['temporary_directory'])) {
-            echo PHP_EOL, '-- Cannot perform a migration due to undefined "temporary_directory".', PHP_EOL;
-            exit;
+
+        if (!file_exists($arrConfig['temporary_directory'])) {
+            mkdir($arrConfig['temporary_directory'], 0777, true);
+            if (!file_exists($arrConfig['temporary_directory'])) {
+                echo PHP_EOL, '-- Cannot perform a migration due to impossibility to create "temporary_directory" : ' . $arrConfig['temporary_directory'], PHP_EOL;
+                exit;
+            }
         }
-        
+
         $this->arrTablesToMigrate      = [];
         $this->arrSummaryReport        = [];
         $this->strTemporaryDirectory   = $arrConfig['temporary_directory'];
@@ -202,13 +205,19 @@ class FromMySqlToPostgreSql
         $this->pgsql                   = null;
         $this->strMySqlDbName          = $this->extractDbName($this->strSourceConString);
         $this->strSchema               = $this->strMySqlDbName;
-        
+
         if (!empty($this->strWriteErrorLogTo)) {
             $this->resourceErrorLog = fopen($this->strWriteErrorLogTo, 'a');
+            if(!$this->resourceErrorLog) {
+                exit;
+            }
         }
         
         if (!empty($this->strWriteCommonLogTo)) {
             $this->resourceCommonLog = fopen($this->strWriteCommonLogTo, 'a');
+            if(!$this->resourceCommonLog) {
+                exit;
+            }
         }
     }
     
@@ -266,7 +275,7 @@ class FromMySqlToPostgreSql
         if (!$boolIsError) {
             echo $strLog;
         }
-        
+
         if (!empty($this->strWriteCommonLogTo)) {
             if (is_resource($this->resourceCommonLog)) {
                 fwrite($this->resourceCommonLog, $strLog);
@@ -348,31 +357,33 @@ class FromMySqlToPostgreSql
     private function createSchema()
     {
         $boolRetVal = false;
-        
+
         try {
             $this->connect();
-            
+
+            $strSchema =  $this->strSchema;
+            $this->log(PHP_EOL . '-- Trying to create schema ');
             for ($i = 1; true; $i++) {
-                $this->strSchema .= $i;
+
                 $sql              = "SELECT schema_name FROM information_schema.schemata "
-                                  . "WHERE schema_name = '" . $this->strSchema . "';";
-                
+                    . "WHERE schema_name = '" . $strSchema . "';";
+
                 $stmt       = $this->pgsql->query($sql);
                 $arrSchemas = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-                
                 if (empty($arrSchemas)) {
+                    $this->strSchema = $strSchema;
                     unset($sql, $arrSchemas, $stmt);
                     break;
                 } else {
                     unset($sql, $arrSchemas, $stmt);
                 }
+                $strSchema =  $this->strSchema.$i;
             }
-            
+
             $sql        = 'CREATE SCHEMA ' . $this->strSchema . ';';
             $stmt       = $this->pgsql->query($sql);
             $boolRetVal = true;
             unset($sql, $stmt);
-            
         } catch (\PDOException $e) {
             $this->generateError($e, __METHOD__ . PHP_EOL . "\t" . '-- Cannot create a new schema...');
         }
@@ -428,16 +439,17 @@ class FromMySqlToPostgreSql
      */
     private function sanitizeValue($strValue)
     {
-        switch ($strValue) {
-            case '0000-00-00 00:00:00':
-                return '1970-01-01 00:00:00';
-                
-            case '0000-00-00':
-                return '1970-01-01';
-                
-            default:
-                return $strValue;
+        // Date 0000-00-00 00:00:00 => 1970-01-01 00:00:00
+        if($strValue === '0000-00-00 00:00:00') {
+            return '1970-01-01 00:00:00';
         }
+
+        // Date 0000-00-00 => 1970-01-01
+        if($strValue === '0000-00-00') {
+            return '1970-01-01';
+        }
+
+        return $strValue;
     }
     
     /**
@@ -591,10 +603,9 @@ class FromMySqlToPostgreSql
             foreach ($arrRows as $arrRow) {
                 $boolValidCsvEntity  = true;
                 $arrSanitizedCsvData = [];
-                
                 foreach ($arrRow as $value) {
                     $strSanitizedValue = $this->sanitizeValue($value);
-                    
+
                     if (mb_check_encoding($strSanitizedValue, $this->strEncoding)) {
                         $arrSanitizedCsvData[] = $strSanitizedValue;
                     } else {
@@ -609,7 +620,7 @@ class FromMySqlToPostgreSql
                     
                     unset($value, $strSanitizedValue);
                 }
-                
+
                 if ($boolValidCsvEntity) {
                     fputcsv($resourceCsv, $arrSanitizedCsvData);
                 }
@@ -619,7 +630,8 @@ class FromMySqlToPostgreSql
             
             fclose($resourceCsv);
             unset($resourceCsv);
-            
+            $this->log("\t" . '-- Trying to populate table: ' . $this->strSchema . '.' . $strTableName . ' with one sql request (COPY) ...' . PHP_EOL);
+
             $sql  = "COPY " . $this->strSchema . ".\"" . $strTableName . "\" FROM '" . $strAddrCsv . "' DELIMITER ',' CSV;";
             $stmt = $this->pgsql->query($sql);
             
@@ -649,6 +661,7 @@ class FromMySqlToPostgreSql
              * If the control got here, then no (usable) rows were inserted.
              * Perform given table population using prepared statment.
              */
+            $this->log("\t".'-- Failed -> trying to populate table with multiple requests ...' . PHP_EOL);
             $intRetVal = $this->populateTableByPrepStmt($arrRows, $strTableName, 0, $intRowsCnt, 0);
         }
         
