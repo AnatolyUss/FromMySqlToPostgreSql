@@ -184,9 +184,12 @@ class FromMySqlToPostgreSql
             exit;
         }
 
-        if (!mkdir($arrConfig['temporary_directory'])) {
-            echo PHP_EOL, '-- Cannot perform a migration due to undefined "temporary_directory".', PHP_EOL;
-            exit;
+        if (!file_exists($arrConfig['temporary_directory'])) {
+            mkdir($arrConfig['temporary_directory'], 0777, true);
+            if (!file_exists($arrConfig['temporary_directory'])) {
+                echo PHP_EOL, '-- Cannot perform a migration due to impossibility to create "temporary_directory" : ' . $arrConfig['temporary_directory'], PHP_EOL;
+                exit;
+            }
         }
 
         $this->arrTablesToMigrate      = [];
