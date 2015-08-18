@@ -1,0 +1,146 @@
+
+	-- FromMySqlToPostgreSql::populateTable
+
+	-- PDOException code: 22P02
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 635
+	-- Message: SQLSTATE[22P02]: Invalid text representation: 7 ERREUR:  syntaxe en entrée invalide pour l'entier : « 1970-01-01 00:00:00 »
+CONTEXT:  COPY action, ligne 1, colonne visibilite_externe : « 1970-01-01 00:00:00 »
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::populateTable
+
+	-- PDOException code: 22P02
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 635
+	-- Message: SQLSTATE[22P02]: Invalid text representation: 7 ERREUR:  syntaxe en entrée invalide pour l'entier : « 1970-01-01 00:00:00 »
+CONTEXT:  COPY origine, ligne 1, colonne complement_mnemonique_est_autorise : « 1970-01-01 00:00:00 »
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::populateTable
+
+	-- PDOException code: 22P02
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 635
+	-- Message: SQLSTATE[22P02]: Invalid text representation: 7 ERREUR:  syntaxe en entrée invalide pour l'entier : « 1970-01-01 00:00:00 »
+CONTEXT:  COPY plan_action, ligne 1, colonne niveau : « 1970-01-01 00:00:00 »
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::populateTable
+
+	-- PDOException code: 22P02
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 635
+	-- Message: SQLSTATE[22P02]: Invalid text representation: 7 ERREUR:  syntaxe en entrée invalide pour l'entier : « 1970-01-01 00:00:00 »
+CONTEXT:  COPY role_utilisateur_pour_plans_actions, ligne 1, colonne a_mettre_a_jour : « 1970-01-01 00:00:00 »
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::populateTable
+
+	-- PDOException code: 22P02
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 635
+	-- Message: SQLSTATE[22P02]: Invalid text representation: 7 ERREUR:  syntaxe en entrée invalide pour l'entier : « 1970-01-01 00:00:00 »
+CONTEXT:  COPY type_action, ligne 3, colonne processus_est_obligatoire : « 1970-01-01 00:00:00 »
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::populateTable
+
+	-- PDOException code: 22P02
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 635
+	-- Message: SQLSTATE[22P02]: Invalid text representation: 7 ERREUR:  syntaxe en entrée invalide pour l'entier : « 1970-01-01 00:00:00 »
+CONTEXT:  COPY utilisateur, ligne 1, colonne locked : « 1970-01-01 00:00:00 »
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::processForeignKey
+	-- Error occurred when tried to create foreign key for table plan_action13."action"...
+
+	-- PDOException code: 42830
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 1122
+	-- Message: SQLSTATE[42830]: Invalid foreign key: 7 ERREUR:  il n'existe aucune contrainte unique correspondant aux clés données pour la
+table « exigence » référencée
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::processForeignKey
+	-- Error occurred when tried to create foreign key for table plan_action13."exigence"...
+
+	-- PDOException code: 42830
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 1122
+	-- Message: SQLSTATE[42830]: Invalid foreign key: 7 ERREUR:  il n'existe aucune contrainte unique correspondant aux clés données pour la
+table « processus » référencée
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::processNull
+	-- Cannot define "NULLs" for table: plan_action13."historisation_action"...
+
+	-- PDOException code: 23502
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 693
+	-- Message: SQLSTATE[23502]: Not null violation: 7 ERREUR:  la colonne « valeur_avant » contient des valeurs NULL
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::processForeignKey
+	-- Error occurred when tried to create foreign key for table plan_action13."note"...
+
+	-- PDOException code: 42830
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 1122
+	-- Message: SQLSTATE[42830]: Invalid foreign key: 7 ERREUR:  il n'existe aucune contrainte unique correspondant aux clés données pour la
+table « utilisateur » référencée
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::processForeignKey
+	-- Error occurred when tried to create foreign key for table plan_action13."origine_plan_action"...
+
+	-- PDOException code: 42830
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 1122
+	-- Message: SQLSTATE[42830]: Invalid foreign key: 7 ERREUR:  il n'existe aucune contrainte unique correspondant aux clés données pour la
+table « plan_action » référencée
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::processForeignKey
+	-- Error occurred when tried to create foreign key for table plan_action13."plan_action"...
+
+	-- PDOException code: 42830
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 1122
+	-- Message: SQLSTATE[42830]: Invalid foreign key: 7 ERREUR:  il n'existe aucune contrainte unique correspondant aux clés données pour la
+table « utilisateur » référencée
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::processIndexAndKey
+	-- Error occurred when tried to set primary key and indices for table plan_action13."role_utilisateur_pour_plans_actions"...
+
+	-- PDOException code: 42P07
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 1014
+	-- Message: SQLSTATE[42P07]: Duplicate table: 7 ERREUR:  la relation « plan_action13_role_utilisateur_pour_plans_actions_utilisateur_i » existe déjà
+	-------------------------------------------------------
+
+
+	-- FromMySqlToPostgreSql::processForeignKey
+	-- Error occurred when tried to create foreign key for table plan_action13."role_utilisateur_pour_plans_actions"...
+
+	-- PDOException code: 42830
+	-- File: C:\web\www\FromMySqlToPostgreSql\migration\FromMySqlToPostgreSql\FromMySqlToPostgreSql.php
+	-- Line: 1122
+	-- Message: SQLSTATE[42830]: Invalid foreign key: 7 ERREUR:  il n'existe aucune contrainte unique correspondant aux clés données pour la
+table « utilisateur » référencée
+	-------------------------------------------------------
+

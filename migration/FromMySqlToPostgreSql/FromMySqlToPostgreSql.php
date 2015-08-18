@@ -206,20 +206,18 @@ class FromMySqlToPostgreSql
         $this->strMySqlDbName          = $this->extractDbName($this->strSourceConString);
         $this->strSchema               = $this->strMySqlDbName;
 
-        $errorOpenLog = false;
         if (!empty($this->strWriteErrorLogTo)) {
             $this->resourceErrorLog = fopen($this->strWriteErrorLogTo, 'a');
-            $errorOpenLog = true;
+            if(!$this->resourceErrorLog) {
+                exit;
+            }
         }
         
         if (!empty($this->strWriteCommonLogTo)) {
             $this->resourceCommonLog = fopen($this->strWriteCommonLogTo, 'a');
-            $errorOpenLog = true;
-        }
-
-        // If unable to open one log file, exit
-        if ($errorOpenLog) {
-            exit;
+            if(!$this->resourceCommonLog) {
+                exit;
+            }
         }
     }
     
