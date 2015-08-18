@@ -275,7 +275,7 @@ class FromMySqlToPostgreSql
         if (!$boolIsError) {
             echo $strLog;
         }
-        
+
         if (!empty($this->strWriteCommonLogTo)) {
             if (is_resource($this->resourceCommonLog)) {
                 fwrite($this->resourceCommonLog, $strLog);
@@ -439,16 +439,17 @@ class FromMySqlToPostgreSql
      */
     private function sanitizeValue($strValue)
     {
-        switch ($strValue) {
-            case '0000-00-00 00:00:00':
-                return '1970-01-01 00:00:00';
-                
-            case '0000-00-00':
-                return '1970-01-01';
-                
-            default:
-                return $strValue;
+        // Date 0000-00-00 00:00:00 => 1970-01-01 00:00:00
+        if($strValue === '0000-00-00 00:00:00') {
+            return '1970-01-01 00:00:00';
         }
+
+        // Date 0000-00-00 => 1970-01-01
+        if($strValue === '0000-00-00') {
+            return '1970-01-01';
+        }
+
+        return $strValue;
     }
     
     /**
@@ -602,10 +603,9 @@ class FromMySqlToPostgreSql
             foreach ($arrRows as $arrRow) {
                 $boolValidCsvEntity  = true;
                 $arrSanitizedCsvData = [];
-                
                 foreach ($arrRow as $value) {
                     $strSanitizedValue = $this->sanitizeValue($value);
-                    
+
                     if (mb_check_encoding($strSanitizedValue, $this->strEncoding)) {
                         $arrSanitizedCsvData[] = $strSanitizedValue;
                     } else {
@@ -620,7 +620,7 @@ class FromMySqlToPostgreSql
                     
                     unset($value, $strSanitizedValue);
                 }
-                
+
                 if ($boolValidCsvEntity) {
                     fputcsv($resourceCsv, $arrSanitizedCsvData);
                 }
@@ -630,7 +630,8 @@ class FromMySqlToPostgreSql
             
             fclose($resourceCsv);
             unset($resourceCsv);
-            
+            $this->log("\t" . '-- Trying to populate table: ' . $this->strSchema . '.' . $strTableName . ' with one sql request (COPY) ...' . PHP_EOL);
+
             $sql  = "COPY " . $this->strSchema . ".\"" . $strTableName . "\" FROM '" . $strAddrCsv . "' DELIMITER ',' CSV;";
             $stmt = $this->pgsql->query($sql);
             
@@ -660,6 +661,7 @@ class FromMySqlToPostgreSql
              * If the control got here, then no (usable) rows were inserted.
              * Perform given table population using prepared statment.
              */
+            $this->log("\t".'-- Failed -> trying to populate table with multiple requests ...' . PHP_EOL);
             $intRetVal = $this->populateTableByPrepStmt($arrRows, $strTableName, 0, $intRowsCnt, 0);
         }
         
