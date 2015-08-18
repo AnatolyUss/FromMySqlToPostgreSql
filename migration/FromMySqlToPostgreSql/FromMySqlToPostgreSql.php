@@ -183,12 +183,12 @@ class FromMySqlToPostgreSql
             
             exit;
         }
-        
+
         if (!mkdir($arrConfig['temporary_directory'])) {
             echo PHP_EOL, '-- Cannot perform a migration due to undefined "temporary_directory".', PHP_EOL;
             exit;
         }
-        
+
         $this->arrTablesToMigrate      = [];
         $this->arrSummaryReport        = [];
         $this->strTemporaryDirectory   = $arrConfig['temporary_directory'];
@@ -348,31 +348,33 @@ class FromMySqlToPostgreSql
     private function createSchema()
     {
         $boolRetVal = false;
-        
+
         try {
             $this->connect();
-            
+
+            $strSchema =  $this->strSchema;
+            $this->log(PHP_EOL . '-- Trying to create schema ');
             for ($i = 1; true; $i++) {
-                $this->strSchema .= $i;
+
                 $sql              = "SELECT schema_name FROM information_schema.schemata "
-                                  . "WHERE schema_name = '" . $this->strSchema . "';";
-                
+                    . "WHERE schema_name = '" . $strSchema . "';";
+
                 $stmt       = $this->pgsql->query($sql);
                 $arrSchemas = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-                
                 if (empty($arrSchemas)) {
+                    $this->strSchema = $strSchema;
                     unset($sql, $arrSchemas, $stmt);
                     break;
                 } else {
                     unset($sql, $arrSchemas, $stmt);
                 }
+                $strSchema =  $this->strSchema.$i;
             }
-            
+
             $sql        = 'CREATE SCHEMA ' . $this->strSchema . ';';
             $stmt       = $this->pgsql->query($sql);
             $boolRetVal = true;
             unset($sql, $stmt);
-            
         } catch (\PDOException $e) {
             $this->generateError($e, __METHOD__ . PHP_EOL . "\t" . '-- Cannot create a new schema...');
         }
