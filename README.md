@@ -55,7 +55,8 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
      
 <p><b>4.</b> Run the script from a terminal.<br /> 
    &nbsp;&nbsp;&nbsp;&nbsp;<b>Sample:</b> &nbsp;
-   php  /path/to/FromMySqlToPostgreSql/index.php &nbsp;  /path/to/FromMySqlToPostgreSql/config[.xml | .json]</p>
+   php &nbsp;  /path/to/FromMySqlToPostgreSql/index.php 
+       &nbsp;  /path/to/FromMySqlToPostgreSql/config[.xml | .json]</p>
        
 <p><b>5.</b> At the end of migration check log files, if necessary.<br />&nbsp;&nbsp;&nbsp;
    Log files will be located in "logs_directory" folder in the root of the package.<br />&nbsp;&nbsp;&nbsp;
