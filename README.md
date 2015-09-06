@@ -40,25 +40,27 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
    your PostgreSql.<br />
    <b>Sample:</b> /path/to/FromMySqlToPostgreSql</p>
 
-3. Create configuration file in either "xml" or "json" format and put it on 
-   the machine running your PostgreSql. 
-   Sample: /path/to/FromMySqlToPostgreSql/config.json or /path/to/FromMySqlToPostgreSql/config.xml
-   Remarks:
-   1. sample_config.json or sample_config.xml are examples of configuration
-      file, so you can edit one of them and use for migration. 
+<p><b>3.</b> Create configuration file in either "xml" or "json" format and put it on 
+   the machine running your PostgreSql.<br /> 
+   <b>Sample:</b> /path/to/FromMySqlToPostgreSql/config.json or /path/to/FromMySqlToPostgreSql/config.xml</p>
+   <p><b>Remarks:</b></p>
+   <ul>
+   <li> sample_config.json or sample_config.xml are examples of configuration
+      file, so you can edit one of them and use for migration.</li> 
       
-   2. Brief description of each configuration parameter will be found at 
-      sample_config.json and sample_config.xml
+   <li> Brief description of each configuration parameter will be found at 
+      sample_config.json and sample_config.xml</li>
+   </ul>
      
-4. Run the script from a terminal. 
-   Sample: php  /path/to/FromMySqlToPostgreSql/index.php  /path/to/FromMySqlToPostgreSql/config[.xml | .json]
+<p><b>4.</b> Run the script from a terminal.<br /> 
+   <b>Sample:</b> php  /path/to/FromMySqlToPostgreSql/index.php  /path/to/FromMySqlToPostgreSql/config[.xml | .json]</p>
        
-5. At the end of migration check log files, if necessary.
-   Log files will be located in "logs_directory" folder in the root of the package.
-   Note: "logs_directory" will be created during script execution.
+<p><b>5.</b> At the end of migration check log files, if necessary.<br />
+   Log files will be located in "logs_directory" folder in the root of the package.<br />
+   <b>Note:</b> "logs_directory" will be created during script execution.</p>
 
-6. In case of any remarks, misunderstandings or errors during migration, 
-   please feel free to email me <anatolyuss@gmail.com>.
+<p><b>6.</b> In case of any remarks, misunderstandings or errors during migration, 
+   please feel free to email me <anatolyuss@gmail.com>.</p>
 
 
 VERSION
