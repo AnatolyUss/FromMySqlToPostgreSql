@@ -34,7 +34,7 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
 
 <h3>USAGE</h3>
 <p><b>1.</b> Create a new database.<br />&nbsp;&nbsp;&nbsp;
-   <b>Sample:</b> CREATE DATABASE my_postgresql_database;</p>
+   <b>Sample:</b>&nbsp; CREATE DATABASE my_postgresql_database;</p>
 
 <p><b>2.</b> Download FromMySqlToPostgreSql package and put it on the machine running 
    your PostgreSql.<br />
@@ -55,14 +55,14 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
      
 <p><b>4.</b> Run the script from a terminal.<br /> 
    &nbsp;&nbsp;&nbsp;<b>Sample:</b> &nbsp;
-   php  /path/to/FromMySqlToPostgreSql/index.php  /path/to/FromMySqlToPostgreSql/config[.xml | .json]</p>
+   php  /path/to/FromMySqlToPostgreSql/index.php &nbsp;  /path/to/FromMySqlToPostgreSql/config[.xml | .json]</p>
        
 <p><b>5.</b> At the end of migration check log files, if necessary.<br />&nbsp;&nbsp;&nbsp;
    Log files will be located in "logs_directory" folder in the root of the package.<br />&nbsp;&nbsp;&nbsp;
    <b>Note:</b> "logs_directory" will be created during script execution.</p>
 
 <p><b>6.</b> In case of any remarks, misunderstandings or errors during migration, 
-   please feel free to email me <a href="mailto:anatolyuss@gmail.com?subject=FromMySqlToPostgreSql"><anatolyuss@gmail.com></a></p>
+   please feel free to email me <a href="mailto:anatolyuss@gmail.com?subject=FromMySqlToPostgreSql">anatolyuss@gmail.com</a></p>
 
 
 <h3>VERSION</h3>
@@ -80,7 +80,7 @@ PostgreSql database took 3 minutes 6 seconds.</p>
 
 <h3>LICENSE</h3>
 <p>FromMySqlToPostgreSql is available under "GNU GENERAL PUBLIC LICENSE" (v. 3) <br />
-<a href="http://www.gnu.org/licenses/gpl.txt"><http://www.gnu.org/licenses/gpl.txt>.</a></p>
+<a href="http://www.gnu.org/licenses/gpl.txt">http://www.gnu.org/licenses/gpl.txt.</a></p>
 
 
 <h3>REMARKS</h3>
