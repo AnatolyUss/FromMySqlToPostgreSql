@@ -33,16 +33,17 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
 </ul>
 
 <h3>USAGE</h3>
-<p><b>1.</b> Create a new database.<br />
+<p><b>1.</b> Create a new database.<br />&nbsp;&nbsp;&nbsp;
    <b>Sample:</b> CREATE DATABASE my_postgresql_database;</p>
 
 <p><b>2.</b> Download FromMySqlToPostgreSql package and put it on the machine running 
    your PostgreSql.<br />
-   <b>Sample:</b> /path/to/FromMySqlToPostgreSql</p>
+   &nbsp;&nbsp;&nbsp;<b>Sample:</b>&nbsp; /path/to/FromMySqlToPostgreSql</p>
 
 <p><b>3.</b> Create configuration file in either "xml" or "json" format and put it on 
    the machine running your PostgreSql.<br /> 
-   <b>Sample:</b> /path/to/FromMySqlToPostgreSql/config.json or /path/to/FromMySqlToPostgreSql/config.xml</p>
+   &nbsp;&nbsp;&nbsp;
+   <b>Sample:</b>&nbsp; /path/to/FromMySqlToPostgreSql/config.json &nbsp; or&nbsp; /path/to/FromMySqlToPostgreSql/config.xml</p>
    <p><b>Remarks:</b></p>
    <ul>
    <li> sample_config.json or sample_config.xml are examples of configuration
@@ -53,40 +54,41 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
    </ul>
      
 <p><b>4.</b> Run the script from a terminal.<br /> 
-   <b>Sample:</b> php  /path/to/FromMySqlToPostgreSql/index.php  /path/to/FromMySqlToPostgreSql/config[.xml | .json]</p>
+   &nbsp;&nbsp;&nbsp;<b>Sample:</b> &nbsp;
+   php  /path/to/FromMySqlToPostgreSql/index.php  /path/to/FromMySqlToPostgreSql/config[.xml | .json]</p>
        
-<p><b>5.</b> At the end of migration check log files, if necessary.<br />
-   Log files will be located in "logs_directory" folder in the root of the package.<br />
+<p><b>5.</b> At the end of migration check log files, if necessary.<br />&nbsp;&nbsp;&nbsp;
+   Log files will be located in "logs_directory" folder in the root of the package.<br />&nbsp;&nbsp;&nbsp;
    <b>Note:</b> "logs_directory" will be created during script execution.</p>
 
 <p><b>6.</b> In case of any remarks, misunderstandings or errors during migration, 
-   please feel free to email me <anatolyuss@gmail.com>.</p>
+   please feel free to email me <a href="mailto:anatolyuss@gmail.com?subject=FromMySqlToPostgreSql"><anatolyuss@gmail.com></a></p>
 
 
-VERSION
-Current version is 1.1.1
-(major version . improvements . bug fixes)
+<h3>VERSION</h3>
+<p>Current version is 1.1.1<br />
+(major version . improvements . bug fixes)</p>
 
 
-TEST
-Tested using MySql Community Server (5.6.21) and PostgreSql (9.3).
-The entire process of migration 59.6 MB database (49 tables, 570750 rows), 
-which includes data types mapping, creation of tables, constraints, indeces, 
-PKs, FKs, migration of data, garbage-collection and analyzing the newly created 
-PostgreSql database took 3 minutes 6 seconds.
+<h3>TEST</h3>
+<p>Tested using MySql Community Server (5.6.21) and PostgreSql (9.3).<br />
+The entire process of migration 59.6 MB database (49 tables, 570750 rows),<br /> 
+which includes data types mapping, creation of tables, constraints, indeces, <br />
+PKs, FKs, migration of data, garbage-collection and analyzing the newly created <br />
+PostgreSql database took 3 minutes 6 seconds.</p>
 
 
-LICENSE
-FromMySqlToPostgreSql is available under "GNU GENERAL PUBLIC LICENSE" (v. 3) 
-<http://www.gnu.org/licenses/gpl.txt>.
+<h3>LICENSE</h3>
+<p>FromMySqlToPostgreSql is available under "GNU GENERAL PUBLIC LICENSE" (v. 3) <br />
+<a href="http://www.gnu.org/licenses/gpl.txt"><http://www.gnu.org/licenses/gpl.txt>.</a></p>
 
 
-REMARKS
-Errors/Exceptions are not passed silently. 
-Any error will be immediately written into the error log file.
+<h3>REMARKS</h3>
+<p>Errors/Exceptions are not passed silently.<br /> 
+Any error will be immediately written into the error log file.</p>
 
 
-Acknowledgements
-Big thanks to Thierry Daguin and Marcel Gsteiger for their valuable remarks.
+<h3>ACKNOWLEDGEMENTS</h3>
+<p>Big thanks to Thierry Daguin and Marcel Gsteiger for their valuable remarks.</p>
 
 
