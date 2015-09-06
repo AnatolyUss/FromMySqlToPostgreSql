@@ -24,20 +24,21 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
  which can be in either "xml" or "json" format.</li>
 </ul>
 
-SYSTEM REQUIREMENTS
-1. PHP (CLI) 5.4 or above.
-2. PDO_MYSQL support.
-3. PDO_PGSQL support.
-4. register_argc_argv should be enabled (check php.ini).
+<h3>SYSTEM REQUIREMENTS</h3>
+<ul>
+<li> PHP (CLI) 5.4 or above.</li>
+<li> PDO_MYSQL support.</li>
+<li> PDO_PGSQL support.</li>
+<li> register_argc_argv should be enabled (check php.ini).</li>
+</ul>
 
+<h3>USAGE</h3>
+<p><b>1.</b> Create a new database.<br />
+   <b>Sample:</b> CREATE DATABASE my_postgresql_database;</p>
 
-USAGE
-1. Create a new database.
-   Sample: CREATE DATABASE my_postgresql_database;
-
-2. Download FromMySqlToPostgreSql package and put it on the machine running 
-   your PostgreSql.
-   Sample: /path/to/FromMySqlToPostgreSql
+<p><b>2.</b> Download FromMySqlToPostgreSql package and put it on the machine running 
+   your PostgreSql.<br />
+   <b>Sample:</b> /path/to/FromMySqlToPostgreSql</p>
 
 3. Create configuration file in either "xml" or "json" format and put it on 
    the machine running your PostgreSql. 
