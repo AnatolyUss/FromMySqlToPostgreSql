@@ -13,5 +13,11 @@
         "Encoding type of your PostgreSql database.",
         "If not supplied, then UTF-8 will be used as a default."
     ],
-    "encoding" : "UTF-8"
+    "encoding" : "UTF-8",
+    
+    "schema_description" : [
+        "schema - a name of the schema, that will contain all migrated tables.",
+        "If not supplied, then a new schema will be created automatically."
+    ],
+    "schema" : ""
 }

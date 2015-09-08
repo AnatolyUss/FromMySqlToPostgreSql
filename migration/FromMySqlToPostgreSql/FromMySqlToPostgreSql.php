@@ -197,7 +197,7 @@ class FromMySqlToPostgreSql
         $this->mysql                   = null;
         $this->pgsql                   = null;
         $this->strMySqlDbName          = $this->extractDbName($this->strSourceConString);
-        $this->strSchema               = $this->strMySqlDbName;
+        $this->strSchema               = $arrConfig['schema'];
         
         if (!file_exists($this->strTemporaryDirectory)) {
             mkdir($this->strTemporaryDirectory);
@@ -371,39 +371,57 @@ class FromMySqlToPostgreSql
      */
     private function createSchema()
     {
-        $boolRetVal = false;
-        $sql        = '';
+        $boolRetVal       = false;
+        $boolSchemaExists = false;
+        $sql              = '';
         
         try {
             $this->connect();
             
-            for ($i = 1; true; $i++) {
+            if (empty($this->strSchema)) {
+                $this->strSchema = $this->strMySqlDbName;
+                
+                for ($i = 1; true; $i++) {
+                    $sql = "SELECT schema_name FROM information_schema.schemata "
+                         . "WHERE schema_name = '" . $this->strSchema . "';";
+
+                    $stmt       = $this->pgsql->query($sql);
+                    $arrSchemas = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+                    if (empty($arrSchemas)) {
+                        unset($sql, $arrSchemas, $stmt);
+                        break;
+                    } elseif (1 == $i) {
+                        $this->strSchema .= '_' . $i;
+                        unset($sql, $arrSchemas, $stmt);
+                    } else {
+                        $arrSchema                        = explode('_', $this->strSchema);
+                        $arrSchema[count($arrSchema) - 1] = $i;
+                        $this->strSchema                  = implode('_', $arrSchema);
+                        unset($sql, $arrSchemas, $stmt, $arrSchema);
+                    }
+                }
+                
+            } else {
                 $sql = "SELECT schema_name FROM information_schema.schemata "
                      . "WHERE schema_name = '" . $this->strSchema . "';";
                 
-                $stmt       = $this->pgsql->query($sql);
-                $arrSchemas = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-                
-                if (empty($arrSchemas)) {
-                    unset($sql, $arrSchemas, $stmt);
-                    break;
-                } elseif (1 == $i) {
-                    $this->strSchema .= '_' . $i;
-                    unset($sql, $arrSchemas, $stmt);
-                } else {
-                    $arrSchema                        = explode('_', $this->strSchema);
-                    $arrSchema[count($arrSchema) - 1] = $i;
-                    $this->strSchema                  = implode('_', $arrSchema);
-                    unset($sql, $arrSchemas, $stmt, $arrSchema);
-                }
+                $stmt             = $this->pgsql->query($sql);
+                $arrSchemas       = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+                $boolSchemaExists = !empty($arrSchemas);
+                unset($sql, $arrSchemas, $stmt);
             }
             
-            $sql        = 'CREATE SCHEMA "' . $this->strSchema . '";';
-            $stmt       = $this->pgsql->query($sql);
+            if (!$boolSchemaExists) {
+                $sql  = 'CREATE SCHEMA "' . $this->strSchema . '";';
+                $stmt = $this->pgsql->query($sql);
+                unset($sql, $stmt);
+            }
+            
             $boolRetVal = true;
-            unset($sql, $stmt);
             
         } catch (\PDOException $e) {
+            $boolRetVal = false;
             $this->generateError(
                 $e, 
                 __METHOD__ . PHP_EOL . "\t" . '-- Cannot create a new schema...',
