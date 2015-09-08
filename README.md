@@ -46,7 +46,7 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
    <b>Sample:</b>&nbsp; /path/to/FromMySqlToPostgreSql/config.json &nbsp; or&nbsp; /path/to/FromMySqlToPostgreSql/config.xml</p>
    <p><b>Remarks:</b></p>
    <ul>
-   <li> sample_config.json or sample_config.xml are examples of configuration
+   <li> sample_config.json and sample_config.xml are examples of configuration
       file, so you can edit one of them and use for migration.</li> 
       
    <li> Brief description of each configuration parameter will be found at 
@@ -68,7 +68,7 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
    <a href="mailto:anatolyuss@gmail.com?subject=FromMySqlToPostgreSql">anatolyuss@gmail.com</a></p>
 
 <h3>VERSION</h3>
-<p>Current version is 1.1.1<br />
+<p>Current version is 1.2.1<br />
 (major version . improvements . bug fixes)</p>
 
 
