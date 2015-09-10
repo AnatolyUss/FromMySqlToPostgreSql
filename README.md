@@ -20,7 +20,7 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
    about every step, it takes during the execution.</li>
 <li>
  Ease of configuration - all the parameters required for migration 
- (3 parameters) should be put in one single file, 
+ (4 parameters) should be put in one single file, 
  which can be in either "xml" or "json" format.</li>
 </ul>
 
