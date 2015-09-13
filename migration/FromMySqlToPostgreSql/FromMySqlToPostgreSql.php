@@ -483,6 +483,8 @@ class FromMySqlToPostgreSql
     private function sanitizeValue($strValue)
     {
         switch ($strValue) {
+            case '0':
+                return '0';
             case '0000-00-00 00:00:00':
             case '0000-00-00':
                 return '-INFINITY';
