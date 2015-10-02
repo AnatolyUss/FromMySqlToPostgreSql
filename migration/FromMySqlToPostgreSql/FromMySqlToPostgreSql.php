@@ -520,9 +520,16 @@ class FromMySqlToPostgreSql
             
             foreach ($arrRows[$intStartInsertionsFromIndex] as $strColumn => $value) {
                 $strColumns .= '"'  . $strColumn  . '",';
-                $strValues  .= '0000-00-00 00:00:00' == $value || '0000-00-00' == $value
-                             ? ' -INFINITY,'
-                             : ' :' . $strColumn  . ',';
+                
+                switch ($value) {
+                    case '0':
+                        $strValues .= ' :' . $strColumn  . ',';
+                    case '0000-00-00 00:00:00':
+                    case '0000-00-00':
+                        $strValues .= ' \'-INFINITY\',';
+                    default:
+                        $strValues .= ' :' . $strColumn  . ',';
+                }
                 
                 unset($strColumn, $value);
             }
