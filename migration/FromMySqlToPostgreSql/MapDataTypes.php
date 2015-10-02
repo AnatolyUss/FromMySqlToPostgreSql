@@ -285,7 +285,7 @@ class MapDataTypes
                            : self::$arrMySqlPgSqlTypesMap[$strDataType]['type'];
                 
             } else {
-                // Should be converted with a length definition. 
+                // Should be converted with a length definition.
                 $strRetVal = $boolIncreaseOriginalSize 
                            ? self::$arrMySqlPgSqlTypesMap[$strDataType]['increased_size'] . '(' . $arrDataType[1]
                            : self::$arrMySqlPgSqlTypesMap[$strDataType]['type'] . '(' . $arrDataType[1];
