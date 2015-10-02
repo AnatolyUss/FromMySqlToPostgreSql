@@ -483,9 +483,6 @@ class FromMySqlToPostgreSql
     private function sanitizeValue($strValue)
     {
         switch ($strValue) {
-			case '0':
-                return '0';
-	        
             case '0':
                 return '0';
             
@@ -1463,4 +1460,3 @@ class FromMySqlToPostgreSql
         unset($intTimeBegin, $intTimeEnd, $intExecTime, $intHours, $intMinutes, $intSeconds);
     }
 }
-
