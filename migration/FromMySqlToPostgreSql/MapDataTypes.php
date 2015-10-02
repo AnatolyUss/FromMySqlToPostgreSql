@@ -79,7 +79,7 @@ class MapDataTypes
         ],
         
         'bigint' => [
-            'increased_size'           => '', 
+            'increased_size'           => 'bigint', 
             'type'                     => 'bigint',
             'mySqlVarLenPgSqlFixedLen' => true,
         ],
@@ -91,20 +91,20 @@ class MapDataTypes
         ],
         
         'double' => [
-            'increased_size'           => '', 
+            'increased_size'           => 'double precision', 
             'type'                     => 'double precision',
             'mySqlVarLenPgSqlFixedLen' => true,
         ],
         
         'double precision' => [
-            'increased_size'           => '', 
+            'increased_size'           => 'double precision', 
             'type'                     => 'double precision',
             'mySqlVarLenPgSqlFixedLen' => true,
         ],
         
         'numeric' => [
             'increased_size'           => '', 
-            'type'                     => 'decimal',
+            'type'                     => 'numeric',
             'mySqlVarLenPgSqlFixedLen' => false,
         ],
         
@@ -115,14 +115,14 @@ class MapDataTypes
         ],
         
         'decimal(19,2)' => [
-            'increased_size'           => 'double precision', 
+            'increased_size'           => 'numeric', 
             'type'                     => 'money',
             'mySqlVarLenPgSqlFixedLen' => false,
         ],
         
         'char' => [
             'increased_size'           => '', 
-            'type'                     => 'char',
+            'type'                     => 'character',
             'mySqlVarLenPgSqlFixedLen' => false,
         ],
         
@@ -295,4 +295,3 @@ class MapDataTypes
         return ' ' . strtoupper($strRetVal) . ' ';
     }
 }
-
