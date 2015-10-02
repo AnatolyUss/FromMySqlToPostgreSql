@@ -524,11 +524,16 @@ class FromMySqlToPostgreSql
                 switch ($value) {
                     case '0':
                         $strValues .= ' :' . $strColumn  . ',';
+                        break;
+                    
                     case '0000-00-00 00:00:00':
                     case '0000-00-00':
                         $strValues .= ' \'-INFINITY\',';
+                        break;
+                    
                     default:
                         $strValues .= ' :' . $strColumn  . ',';
+                        break;
                 }
                 
                 unset($strColumn, $value);
