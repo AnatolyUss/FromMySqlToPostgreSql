@@ -91,5 +91,5 @@ Any error will be immediately written into the error log file.</p>
 
 
 <h3>ACKNOWLEDGEMENTS</h3>
-<p>Big thanks to Thierry Daguin and Marcel Gsteiger for their valuable remarks.</p>
+<p>Big thanks to Thierry Daguin and Marcel Gsteiger for their valuable remarks.</p> 
 
