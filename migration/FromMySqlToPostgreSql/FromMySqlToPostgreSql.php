@@ -520,22 +520,7 @@ class FromMySqlToPostgreSql
             
             foreach ($arrRows[$intStartInsertionsFromIndex] as $strColumn => $value) {
                 $strColumns .= '"'  . $strColumn  . '",';
-                
-                switch ($value) {
-                    case '0':
-                        $strValues .= ' :' . $strColumn  . ',';
-                        break;
-                    
-                    case '0000-00-00 00:00:00':
-                    case '0000-00-00':
-                        $strValues .= ' \'-INFINITY\',';
-                        break;
-                    
-                    default:
-                        $strValues .= ' :' . $strColumn  . ',';
-                        break;
-                }
-                
+                $strValues  .= ' :' . $strColumn  . ',';
                 unset($strColumn, $value);
             }
             
@@ -547,6 +532,17 @@ class FromMySqlToPostgreSql
             
             foreach ($arrRowsPortion as $arrRow) {
                 foreach ($arrRow as $strColumn => $value) {
+                    switch ($value) {
+                        case '0':
+                            $value = '0';
+                            break;
+                        
+                        case '0000-00-00 00:00:00':
+                        case '0000-00-00':
+                            $value = '-INFINITY';
+                            break;
+                    }
+                    
                     if (is_null($value)) {
                         $stmtInsert->bindValue(':' . $strColumn, $value, \PDO::PARAM_NULL);
                     } elseif (is_bool($value)) {
