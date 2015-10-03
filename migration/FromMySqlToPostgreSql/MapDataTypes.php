@@ -290,6 +290,17 @@ class MapDataTypes
                            ? self::$arrMySqlPgSqlTypesMap[$strDataType]['increased_size'] . '(' . $arrDataType[1]
                            : self::$arrMySqlPgSqlTypesMap[$strDataType]['type'] . '(' . $arrDataType[1];
             }
+            
+            // Prevent incompatible length (CHARACTER(0) or CHARACTER VARYING(0)).
+            switch ($strRetVal) {
+                case 'character(0)':
+                    $strRetVal = 'character(1)';
+                    break;
+                
+                case 'character varying(0)':
+                    $strRetVal = 'character varying(1)';
+                    break;
+            }
         }
         
         return ' ' . strtoupper($strRetVal) . ' ';
