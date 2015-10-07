@@ -68,7 +68,7 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
    <a href="mailto:anatolyuss@gmail.com?subject=FromMySqlToPostgreSql">anatolyuss@gmail.com</a></p>
 
 <h3>VERSION</h3>
-<p>Current version is 1.2.3<br />
+<p>Current version is 1.3.0<br />
 (major version . improvements . bug fixes)</p>
 
 
