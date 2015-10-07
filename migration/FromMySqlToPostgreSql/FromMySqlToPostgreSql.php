@@ -147,7 +147,7 @@ class FromMySqlToPostgreSql
     /**
      * Path to "not_created_views" directory.
      * 
-     * @var array
+     * @var string
      */
     private $strViewsErrorsDirectoryPath;
     
