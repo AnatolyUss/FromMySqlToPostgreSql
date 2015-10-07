@@ -82,6 +82,13 @@ class FromMySqlToPostgreSql
     private $arrTablesToMigrate;
     
     /**
+     * An array of MySql views, that need to be migrated.
+     * 
+     * @var array
+     */
+    private $arrViewsToMigrate;
+    
+    /**
      * Path to errors log file.
      * 
      * @var string
@@ -138,6 +145,13 @@ class FromMySqlToPostgreSql
     private $strLogsDirectoryPath;
     
     /**
+     * Path to "not_created_views" directory.
+     * 
+     * @var array
+     */
+    private $strViewsErrorsDirectoryPath;
+    
+    /**
      * Extract database name from given query-string.
      * 
      * @param  string $strConString
@@ -184,20 +198,22 @@ class FromMySqlToPostgreSql
             exit;
         }
         
-        $this->arrTablesToMigrate      = [];
-        $this->arrSummaryReport        = [];
-        $this->strTemporaryDirectory   = $arrConfig['temp_dir_path'];
-        $this->strLogsDirectoryPath    = $arrConfig['logs_dir_path'];
-        $this->strWriteCommonLogTo     = $arrConfig['logs_dir_path'] . '/all.log';
-        $this->strWriteSummaryReportTo = $arrConfig['logs_dir_path'] . '/report-only.log';
-        $this->strWriteErrorLogTo      = $arrConfig['logs_dir_path'] . '/errors-only.log';
-        $this->strEncoding             = isset($arrConfig['encoding']) ? $arrConfig['encoding'] : 'UTF-8';
-        $this->strSourceConString      = $arrConfig['source'];
-        $this->strTargetConString      = $arrConfig['target'];
-        $this->mysql                   = null;
-        $this->pgsql                   = null;
-        $this->strMySqlDbName          = $this->extractDbName($this->strSourceConString);
-        $this->strSchema               = $arrConfig['schema'];
+        $this->arrTablesToMigrate          = [];
+        $this->arrViewsToMigrate           = [];
+        $this->arrSummaryReport            = [];
+        $this->strTemporaryDirectory       = $arrConfig['temp_dir_path'];
+        $this->strLogsDirectoryPath        = $arrConfig['logs_dir_path'];
+        $this->strWriteCommonLogTo         = $arrConfig['logs_dir_path'] . '/all.log';
+        $this->strWriteSummaryReportTo     = $arrConfig['logs_dir_path'] . '/report-only.log';
+        $this->strWriteErrorLogTo          = $arrConfig['logs_dir_path'] . '/errors-only.log';
+        $this->strViewsErrorsDirectoryPath = $arrConfig['logs_dir_path'] . '/not_created_views';
+        $this->strEncoding                 = isset($arrConfig['encoding']) ? $arrConfig['encoding'] : 'UTF-8';
+        $this->strSourceConString          = $arrConfig['source'];
+        $this->strTargetConString          = $arrConfig['target'];
+        $this->mysql                       = null;
+        $this->pgsql                       = null;
+        $this->strMySqlDbName              = $this->extractDbName($this->strSourceConString);
+        $this->strSchema                   = $arrConfig['schema'];
         
         if (!file_exists($this->strTemporaryDirectory)) {
             mkdir($this->strTemporaryDirectory);
@@ -339,23 +355,33 @@ class FromMySqlToPostgreSql
      * @param  void
      * @return bool
      */
-    private function loadTablesToMigrate()
+    private function loadStructureToMigrate()
     {
         $boolRetVal = false;
         $sql        = '';
         
         try {
             $this->connect();
-            $sql                      = 'SHOW TABLES FROM `' . $this->strMySqlDbName . '`;';
-            $stmt                     = $this->mysql->query($sql);
-            $this->arrTablesToMigrate = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $boolRetVal               = true;
-            unset($sql, $stmt);
+            $sql       = 'SHOW FULL TABLES IN `' . $this->strMySqlDbName . '`;';
+            $stmt      = $this->mysql->query($sql);
+            $arrResult = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            
+            foreach ($arrResult as $arrRow) {
+                if ('BASE TABLE' == $arrRow['Table_type']) {
+                    $this->arrTablesToMigrate[] = $arrRow;
+                } elseif ('VIEW' == $arrRow['Table_type']) {
+                    $this->arrViewsToMigrate[] = $arrRow;
+                }
+                unset($arrRow);
+            }
+            
+            $boolRetVal = true;
+            unset($sql, $stmt, $arrResult);
             
         } catch (\PDOException $e) {
             $this->generateError(
                 $e,
-                __METHOD__ . PHP_EOL . "\t" . '-- Cannot load tables from source (MySql) database...',
+                __METHOD__ . PHP_EOL . "\t" . '-- Cannot load tables/views from source (MySql) database...',
                 $sql
             );
         }
@@ -430,6 +456,60 @@ class FromMySqlToPostgreSql
         }
         
         return $boolRetVal;
+    }
+    
+    /**
+     * Migrate given view to PostgreSql server.
+     * 
+     * @param  string $strViewName
+     * @return void
+     */
+    private function createView($strViewName)
+    {
+        $sql = '';
+        
+        try {
+            $this->log(PHP_EOL . "\t" . '-- Attempting to create view: "' . $this->strSchema . '"."' . $strViewName . '"...' . PHP_EOL);
+            $this->connect();
+            
+            $sql        = 'SHOW CREATE VIEW `' . $strViewName . '`;';
+            $stmt       = $this->mysql->query($sql);
+            $arrColumns = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            unset($sql, $stmt);
+            
+            $sql  = \ViewGenerator::generateView($this->strSchema, $strViewName, $arrColumns[0]['Create View']);
+            $stmt = $this->pgsql->query($sql);
+            unset($sql, $stmt, $arrColumns);
+            $this->log(PHP_EOL . "\t" . '-- View: "' . $this->strSchema . '"."' . $strViewName . '" is created...' . PHP_EOL);
+            
+        } catch (\PDOException $e) {
+            $boolViewsErrorsDirectoryExists = true;
+            
+            if (!file_exists($this->strViewsErrorsDirectoryPath)) {
+                mkdir($this->strViewsErrorsDirectoryPath);
+
+                if (!file_exists($this->strViewsErrorsDirectoryPath)) {
+                    $boolViewsErrorsDirectoryExists = false;
+                }
+            }
+            
+            if (file_exists($this->strViewsErrorsDirectoryPath)) {
+                $resource = fopen($this->strViewsErrorsDirectoryPath . '/' . $strViewName . '.sql', 'w');
+                fwrite($resource, $sql);
+                fclose($resource);
+                unset($resource);
+            }
+            
+            $strMsg = $boolViewsErrorsDirectoryExists && file_exists($this->strViewsErrorsDirectoryPath . '/' . $strViewName . '.sql') 
+                    ? __METHOD__ . PHP_EOL . "\t" . '-- Cannot create view "' . $this->strSchema . '"."' .  $strViewName .  '" '
+                      . PHP_EOL . "\t" . '-- You can find view definition at "logs_directory/not_created_views/' . $strViewName . '.sql"'
+                      . PHP_EOL . "\t" . '-- You can try to fix view definition script and run it manually.'
+                    : __METHOD__ . PHP_EOL . "\t" . '-- Cannot create view "' . $this->strSchema . '"."' .  $strViewName .  '" ';
+            
+            $this->log(PHP_EOL . "\t" . '-- Cannot create view "' . $this->strSchema . '"."' .  $strViewName .  '" ' . PHP_EOL);
+            $this->generateError($e, $strMsg, $sql);
+            unset($strMsg, $boolViewsErrorsDirectoryExists, $sql);
+        }
     }
     
     /**
@@ -1401,7 +1481,7 @@ class FromMySqlToPostgreSql
             $this->log('-- New schema "' . $this->strSchema . '" was successfully created...' . PHP_EOL);
         }
         
-        if (!$this->loadTablesToMigrate()) {
+        if (!$this->loadStructureToMigrate()) {
             $this->log('-- Script is terminated.' . PHP_EOL);
             exit;
         } else {
@@ -1441,6 +1521,14 @@ class FromMySqlToPostgreSql
             $this->setConstraints($arrTable['Tables_in_' . $this->strMySqlDbName]);
             $this->runVacuumFullAndAnalyze($arrTable['Tables_in_' . $this->strMySqlDbName]);
             unset($arrTable);
+        }
+        
+        /**
+         * Attempt to create views.
+         */
+        foreach ($this->arrViewsToMigrate as $arrView) {
+            $this->createView($arrView['Tables_in_' . $this->strMySqlDbName]);
+            unset($arrView);
         }
         
         /**
