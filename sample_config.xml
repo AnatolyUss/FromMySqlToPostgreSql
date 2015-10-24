@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root>
     <!-- <source> - a connection string to your MySql database. -->
-    <source>mysql:host=localhost;port=3306;dbname=your_db_name,root,123456</source>
+    <source>mysql:host=127.0.0.1;port=3306;dbname=rightcom_db,root,</source>
+    <!--source>mysql:host=127.0.0.1;port=3306;dbname=tweather,root,</source-->
     
     <!-- <target> - a connection string to your PostgreSql database. -->
-    <target>pgsql:host=localhost;port=5432;dbname=your_pg_db,postgres,123456789</target>
+    <target>pgsql:host=127.0.0.1;port=5432;dbname=rightcom_db,postgres,7370142533</target>
+    <!--target>pgsql:host=127.0.0.1;port=5432;dbname=tweather,postgres,7370142533</target-->
     
     <!-- 
         <encoding> - an encoding type of your PostgreSql database. 
@@ -17,5 +19,10 @@
         If not supplied, then a new schema will be created automatically.
     -->
     <schema></schema>
+    
+    <!--
+        During migration each table's data will be split into chunks of <data_chunk_size> (in MB).
+        If not supplied, then 10 MB will be used as a default.
+    -->
+    <data_chunk_size>10</data_chunk_size>
 </root>
-
