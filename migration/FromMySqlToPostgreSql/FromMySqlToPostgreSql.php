@@ -152,6 +152,13 @@ class FromMySqlToPostgreSql
     private $strViewsErrorsDirectoryPath;
     
     /**
+     * During migration each table's data will be split into chunks of $floatDataChunkSize.
+     * 
+     * @var float
+     */
+    private $floatDataChunkSize;
+    
+    /**
      * Extract database name from given query-string.
      * 
      * @param  string $strConString
@@ -208,12 +215,13 @@ class FromMySqlToPostgreSql
         $this->strWriteErrorLogTo          = $arrConfig['logs_dir_path'] . '/errors-only.log';
         $this->strViewsErrorsDirectoryPath = $arrConfig['logs_dir_path'] . '/not_created_views';
         $this->strEncoding                 = isset($arrConfig['encoding']) ? $arrConfig['encoding'] : 'UTF-8';
+        $this->floatDataChunkSize          = isset($arrConfig['data_chunk_size']) ? (float) $arrConfig['data_chunk_size'] : 10;
         $this->strSourceConString          = $arrConfig['source'];
         $this->strTargetConString          = $arrConfig['target'];
         $this->mysql                       = null;
         $this->pgsql                       = null;
         $this->strMySqlDbName              = $this->extractDbName($this->strSourceConString);
-        $this->strSchema                   = $arrConfig['schema'];
+        $this->strSchema                   = isset($arrConfig['schema']) ? $arrConfig['schema'] : '';
         
         if (!file_exists($this->strTemporaryDirectory)) {
             mkdir($this->strTemporaryDirectory);
@@ -714,7 +722,6 @@ class FromMySqlToPostgreSql
     {
         $strAddrCsv = $this->strTemporaryDirectory . '/' . $strTableName . '.csv';
         $intRetVal  = 0;
-        $intRowsCnt = 0;
         $arrRows    = [];
         $sql        = '';
         
@@ -722,46 +729,69 @@ class FromMySqlToPostgreSql
             $this->log("\t" . '-- Populating table "' . $this->strSchema . '"."' . $strTableName . '" ' . PHP_EOL);
             $this->connect();
             
-            $sql        = 'SELECT * FROM `' . $strTableName . '`;';
-            $stmt       = $this->mysql->query($sql);
-            $arrRows    = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $intRowsCnt = count($arrRows);
-            unset($sql, $stmt);
+            /*
+             * Determine current table size, apply "chunking".
+             */
+            $sql = "SELECT ((data_length + index_length) / 1024 / 1024) AS size_in_mb 
+                    FROM information_schema.TABLES 
+                    WHERE table_schema = '" . $this->strMySqlDbName . "' 
+                      AND table_name = '" . $strTableName . "';";
+            
+            $stmt               = $this->mysql->query($sql);
+            $arrRows            = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $floatTableSizeInMb = (float) $arrRows[0]['size_in_mb'];
+            unset($sql, $stmt, $arrRows);
+            
+            $resourceCsv    = fopen($strAddrCsv, 'w');
+            $sql            = "SHOW TABLE STATUS FROM `" . $this->strMySqlDbName . "` WHERE Name = '" . $strTableName . "';";
+            $stmt           = $this->mysql->query($sql);
+            $arrRows        = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $intRowsCnt     = (int) $arrRows[0]['Rows'];
+            $intRowsInChunk = ceil($intRowsCnt / ($floatTableSizeInMb / $this->floatDataChunkSize));
+            unset($sql, $stmt, $arrRows);
             
             $this->log(
                 "\t" . '-- Total rows to insert into "' . $this->strSchema . '"."' 
                 . $strTableName . '": ' . $intRowsCnt . PHP_EOL
             );
             
-            $resourceCsv = fopen($strAddrCsv, 'w');
-            
-            foreach ($arrRows as $arrRow) {
-                $boolValidCsvEntity  = true;
-                $arrSanitizedCsvData = [];
+            for ($intOffset = 0; $intOffset < $intRowsCnt; $intOffset += $intRowsInChunk) {
+                $sql     = 'SELECT * FROM `' . $strTableName . '` LIMIT ' . $intOffset . ', ' . $intRowsInChunk . ';';
+                $stmt    = $this->mysql->query($sql);
+                $arrRows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+                unset($sql, $stmt);
                 
-                foreach ($arrRow as $value) {
-                    $strSanitizedValue = $this->sanitizeValue($value);
+                /*
+                 * Sanitize data and insert it into temporary csv file.
+                 */
+                foreach ($arrRows as $arrRow) {
+                    $boolValidCsvEntity  = true;
+                    $arrSanitizedCsvData = [];
                     
-                    if (mb_check_encoding($strSanitizedValue, $this->strEncoding)) {
-                        $arrSanitizedCsvData[] = $strSanitizedValue;
-                    } else {
-                        $strSanitizedValue = mb_convert_encoding($strSanitizedValue, $this->strEncoding);
+                    foreach ($arrRow as $value) {
+                        $strSanitizedValue = $this->sanitizeValue($value);
                         
                         if (mb_check_encoding($strSanitizedValue, $this->strEncoding)) {
                             $arrSanitizedCsvData[] = $strSanitizedValue;
                         } else {
-                            $boolValidCsvEntity = false;
+                            $strSanitizedValue = mb_convert_encoding($strSanitizedValue, $this->strEncoding);
+                            
+                            if (mb_check_encoding($strSanitizedValue, $this->strEncoding)) {
+                                $arrSanitizedCsvData[] = $strSanitizedValue;
+                            } else {
+                                $boolValidCsvEntity = false;
+                            }
                         }
+                        
+                        unset($value, $strSanitizedValue);
                     }
                     
-                    unset($value, $strSanitizedValue);
+                    if ($boolValidCsvEntity) {
+                        fputcsv($resourceCsv, $arrSanitizedCsvData);
+                    }
+                    
+                    unset($arrRow, $arrSanitizedCsvData, $boolValidCsvEntity);
                 }
-                
-                if ($boolValidCsvEntity) {
-                    fputcsv($resourceCsv, $arrSanitizedCsvData);
-                }
-                
-                unset($arrRow, $arrSanitizedCsvData, $boolValidCsvEntity);
             }
             
             fclose($resourceCsv);
@@ -778,7 +808,7 @@ class FromMySqlToPostgreSql
             $this->log("\t-- For now inserted: " . $intRetVal . ' rows' . PHP_EOL);
             
             if ($intRowsCnt != 0 && 0 == $intRetVal) {
-                /**
+                /*
                  * In most cases (~100%) the control will not get here.
                  * Perform given table population using prepared statment.
                  */
@@ -792,7 +822,7 @@ class FromMySqlToPostgreSql
             $this->generateError($e, $strMsg, $sql);
             unset($strMsg);
             
-            /**
+            /*
              * If the control got here, then no (usable) rows were inserted.
              * Perform given table population using prepared statment.
              */
@@ -942,7 +972,7 @@ class FromMySqlToPostgreSql
                     $arrType = explode('(', $arrColumn['Type']);
                     
                     if ('enum' == $arrType[0]) {
-                        /**
+                        /*
                          * $arrType[1] ends with ')'.
                          */
                         $sql = 'ALTER TABLE "' . $this->strSchema . '"."' . $strTableName . '" '
@@ -1144,7 +1174,7 @@ class FromMySqlToPostgreSql
                                       . 'ADD PRIMARY KEY(' . implode(',', $arrIndex['column_name']) . ');';
                     
                 } else {
-                    /**
+                    /*
                      * "schema_idxname_{integer}_idx" - is NOT a mistake.
                      */
                     $strColumnName    = str_replace('"', '', $arrIndex['column_name'][0]) . $intCounter;
@@ -1471,7 +1501,7 @@ class FromMySqlToPostgreSql
         
         ini_set('memory_limit', '-1');
         
-        /**
+        /*
          * Create a database schema.
          */
         if (!$this->createSchema()) {
@@ -1489,7 +1519,7 @@ class FromMySqlToPostgreSql
             $this->log('-- ' . $intTablesCnt . ($intTablesCnt === 1 ? ' table ' : ' tables ') . 'detected' . PHP_EOL);
         }
         
-        /**
+        /*
          * Create tables with the basic structure (column names and data types).
          * Populate tables.
          */
@@ -1514,7 +1544,7 @@ class FromMySqlToPostgreSql
             unset($arrTable, $floatStartCopy, $floatEndCopy, $intRecords);
         }
         
-        /**
+        /*
          * Set constraints, then run "vacuum full" and "ANALYZE" for each table.
          */
         foreach ($this->arrTablesToMigrate as $arrTable) {
@@ -1523,7 +1553,7 @@ class FromMySqlToPostgreSql
             unset($arrTable);
         }
         
-        /**
+        /*
          * Attempt to create views.
          */
         foreach ($this->arrViewsToMigrate as $arrView) {
@@ -1531,7 +1561,7 @@ class FromMySqlToPostgreSql
             unset($arrView);
         }
         
-        /**
+        /*
          * Remove the temporary directory.
          */
         if (!rmdir($this->strTemporaryDirectory)) {
@@ -1556,3 +1586,4 @@ class FromMySqlToPostgreSql
         unset($intTimeBegin, $intTimeEnd, $intExecTime, $intHours, $intMinutes, $intSeconds);
     }
 }
+
