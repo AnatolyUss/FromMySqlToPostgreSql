@@ -2,12 +2,12 @@
     "source_description" : [
         "Connection string to your MySql database"
     ],
-    "source" : "mysql:host=127.0.0.1;port=3306;dbname=test_db,root,",
+    "source" : "mysql:host=localhost;port=3306;dbname=your_db_name,root,123456",
     
     "target_description" : [
         "Connection string to your PostgreSql database"
     ],
-    "target" : "pgsql:host=127.0.0.1;port=5432;dbname=test_db,postgres,7370142533",
+    "target" : "pgsql:host=localhost;port=5432;dbname=your_pg_db,postgres,123456789",
     
     "encoding_description" : [
         "Encoding type of your PostgreSql database.",
