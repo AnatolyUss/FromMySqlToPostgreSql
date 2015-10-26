@@ -216,6 +216,7 @@ class FromMySqlToPostgreSql
         $this->strViewsErrorsDirectoryPath = $arrConfig['logs_dir_path'] . '/not_created_views';
         $this->strEncoding                 = isset($arrConfig['encoding']) ? $arrConfig['encoding'] : 'UTF-8';
         $this->floatDataChunkSize          = isset($arrConfig['data_chunk_size']) ? (float) $arrConfig['data_chunk_size'] : 10;
+        $this->floatDataChunkSize          = $this->floatDataChunkSize < 1 ? 1 : $this->floatDataChunkSize;
         $this->strSourceConString          = $arrConfig['source'];
         $this->strTargetConString          = $arrConfig['target'];
         $this->mysql                       = null;
@@ -740,6 +741,7 @@ class FromMySqlToPostgreSql
             $stmt               = $this->mysql->query($sql);
             $arrRows            = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $floatTableSizeInMb = (float) $arrRows[0]['size_in_mb'];
+            $floatTableSizeInMb = $floatTableSizeInMb < 1 ? 1 : $floatTableSizeInMb;
             unset($sql, $stmt, $arrRows);
             
             $resourceCsv    = fopen($strAddrCsv, 'w');
@@ -747,7 +749,9 @@ class FromMySqlToPostgreSql
             $stmt           = $this->mysql->query($sql);
             $arrRows        = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $intRowsCnt     = (int) $arrRows[0]['Rows'];
-            $intRowsInChunk = ceil($intRowsCnt / ($floatTableSizeInMb / $this->floatDataChunkSize));
+            $floatChunksCnt = $floatTableSizeInMb / $this->floatDataChunkSize;
+            $floatChunksCnt = $floatChunksCnt < 1 ? 1 : $floatChunksCnt;
+            $intRowsInChunk = ceil($intRowsCnt / $floatChunksCnt);
             unset($sql, $stmt, $arrRows);
             
             $this->log(
