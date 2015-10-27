@@ -796,6 +796,8 @@ class FromMySqlToPostgreSql
                     
                     unset($arrRow, $arrSanitizedCsvData, $boolValidCsvEntity);
                 }
+                
+                unset($arrRows);
             }
             
             fclose($resourceCsv);
