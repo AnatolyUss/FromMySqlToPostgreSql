@@ -282,7 +282,7 @@ class FromMySqlToPostgreSql
     {
         if (empty($this->mysql)) {
             $arrSrcInput = explode(',', $this->strSourceConString);
-            $this->mysql = new \PDO($arrSrcInput[0], $arrSrcInput[1], $arrSrcInput[2]);
+            $this->mysql = new \PDO($arrSrcInput[0], $arrSrcInput[1], $arrSrcInput[2], array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
             $this->mysql->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
             $this->mysql->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         }
