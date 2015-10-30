@@ -41,205 +41,205 @@ class MapDataTypes
      * 
      * @var array
      */
-    private static $arrMySqlPgSqlTypesMap = array(
-        'bit' => array(
+    private static $arrMySqlPgSqlTypesMap = [
+        'bit' => [
             'increased_size'           => 'smallint', 
             'type'                     => 'bit',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'year' => array(
+        'year' => [
             'increased_size'           => 'int', 
             'type'                     => 'smallint',
             'mySqlVarLenPgSqlFixedLen' => true,
-        ),
+        ],
         
-        'tinyint' => array(
+        'tinyint' => [
             'increased_size'           => 'int', 
             'type'                     => 'smallint',
             'mySqlVarLenPgSqlFixedLen' => true,
-        ),
+        ],
         
-        'smallint' => array(
+        'smallint' => [
             'increased_size'           => 'int', 
             'type'                     => 'smallint',
             'mySqlVarLenPgSqlFixedLen' => true,
-        ),
+        ],
         
-        'mediumint' => array(
+        'mediumint' => [
             'increased_size'           => 'bigint', 
             'type'                     => 'int',
             'mySqlVarLenPgSqlFixedLen' => true,
-        ),
+        ],
         
-        'int' => array(
+        'int' => [
             'increased_size'           => 'bigint', 
             'type'                     => 'int',
             'mySqlVarLenPgSqlFixedLen' => true,
-        ),
+        ],
         
-        'bigint' => array(
+        'bigint' => [
             'increased_size'           => 'bigint', 
             'type'                     => 'bigint',
             'mySqlVarLenPgSqlFixedLen' => true,
-        ),
+        ],
         
-        'float' => array(
+        'float' => [
             'increased_size'           => 'double precision', 
             'type'                     => 'real',
             'mySqlVarLenPgSqlFixedLen' => true,
-        ),
+        ],
         
-        'double' => array(
+        'double' => [
             'increased_size'           => 'double precision', 
             'type'                     => 'double precision',
             'mySqlVarLenPgSqlFixedLen' => true,
-        ),
+        ],
         
-        'double precision' => array(
+        'double precision' => [
             'increased_size'           => 'double precision', 
             'type'                     => 'double precision',
             'mySqlVarLenPgSqlFixedLen' => true,
-        ),
+        ],
         
-        'numeric' => array(
+        'numeric' => [
             'increased_size'           => '', 
             'type'                     => 'numeric',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'decimal' => array(
+        'decimal' => [
             'increased_size'           => '', 
             'type'                     => 'decimal',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'decimal(19,2)' => array(
+        'decimal(19,2)' => [
             'increased_size'           => 'numeric', 
             'type'                     => 'money',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'char' => array(
+        'char' => [
             'increased_size'           => '', 
             'type'                     => 'character',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'varchar' => array(
+        'varchar' => [
             'increased_size'           => '', 
             'type'                     => 'character varying',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'date' => array(
+        'date' => [
             'increased_size'           => '', 
             'type'                     => 'date',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'time' => array(
+        'time' => [
             'increased_size'           => '', 
             'type'                     => 'time',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'datetime' => array(
+        'datetime' => [
             'increased_size'           => '', 
             'type'                     => 'timestamp',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'timestamp' => array(
+        'timestamp' => [
             'increased_size'           => '', 
             'type'                     => 'timestamp',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'point' => array(
+        'point' => [
             'increased_size'           => '', 
             'type'                     => 'point',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'linestring' => array(
+        'linestring' => [
             'increased_size'           => '', 
             'type'                     => 'line',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'polygon' => array(
+        'polygon' => [
             'increased_size'           => '', 
             'type'                     => 'polygon',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'enum' => array(
+        'enum' => [
             'increased_size'           => '', 
             'type'                     => 'character varying(255)',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'tinytext' => array(
+        'tinytext' => [
             'increased_size'           => '', 
             'type'                     => 'text',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'mediumtext' => array(
+        'mediumtext' => [
             'increased_size'           => '', 
             'type'                     => 'text',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'longtext' => array(
+        'longtext' => [
             'increased_size'           => '', 
             'type'                     => 'text',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'text' => array(
+        'text' => [
             'increased_size'           => '', 
             'type'                     => 'text',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'varbinary' => array(
+        'varbinary' => [
             'increased_size'           => '', 
             'type'                     => 'bytea',
             'mySqlVarLenPgSqlFixedLen' => true,
-        ),
+        ],
         
-        'binary' => array(
+        'binary' => [
             'increased_size'           => '', 
             'type'                     => 'bytea',
             'mySqlVarLenPgSqlFixedLen' => true,
-        ),
+        ],
         
-        'tinyblob' => array(
+        'tinyblob' => [
             'increased_size'           => '', 
             'type'                     => 'bytea',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'mediumblob' => array(
+        'mediumblob' => [
             'increased_size'           => '', 
             'type'                     => 'bytea',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'longblob' => array(
+        'longblob' => [
             'increased_size'           => '', 
             'type'                     => 'bytea',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
+        ],
         
-        'blob' => array(
+        'blob' => [
             'increased_size'           => '', 
             'type'                     => 'bytea',
             'mySqlVarLenPgSqlFixedLen' => false,
-        ),
-    );
+        ],
+    ];
     
     /**
      * Translate mysql data types into postgresql data types.

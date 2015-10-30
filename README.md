@@ -78,9 +78,7 @@ The entire process of migration 59.6 MB database (49 tables, 570750 rows),<br />
 which includes data types mapping, creation of tables, constraints, indeces, <br />
 PKs, FKs, migration of data, garbage-collection and analyzing the newly created <br />
 PostgreSql database took 3 minutes 6 seconds.</p>
-<p>Tested using MySql Community Server (5.6.21) and PostgreSql (9.4).<br />
-The entire process of migration 3.1 GB database (56 tables, 8732967 rows),<br /> 
-with the same steps as above, took 2 hours and 10 minutes.</p> 
+
 
 <h3>LICENSE</h3>
 <p>FromMySqlToPostgreSql is available under "GNU GENERAL PUBLIC LICENSE" (v. 3) <br />
