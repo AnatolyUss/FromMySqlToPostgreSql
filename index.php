@@ -26,7 +26,7 @@
  */
 function getConfig($strPath)
 {
-    $arrRetVal = [];
+    $arrRetVal = array();
     
     if (is_file($strPath)) {
         $strExtension = pathinfo($strPath, PATHINFO_EXTENSION);
@@ -67,12 +67,12 @@ function getConfig($strPath)
                         break;
                 }
                 
-                $arrRetVal = is_null($config) || !empty($strError) ? [] : $config;
+                $arrRetVal = is_null($config) || !empty($strError) ? array() : $config;
                 break;
             
             case 'xml':
                 $config    = simplexml_load_file($strPath);
-                $arrRetVal = empty($config) ? [] : get_object_vars($config);
+                $arrRetVal = empty($config) ? array() : get_object_vars($config);
                 break;
         }
     }

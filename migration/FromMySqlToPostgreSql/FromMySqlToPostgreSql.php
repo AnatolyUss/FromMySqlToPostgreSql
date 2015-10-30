@@ -205,9 +205,9 @@ class FromMySqlToPostgreSql
             exit;
         }
         
-        $this->arrTablesToMigrate          = [];
-        $this->arrViewsToMigrate           = [];
-        $this->arrSummaryReport            = [];
+        $this->arrTablesToMigrate          = array();
+        $this->arrViewsToMigrate           = array();
+        $this->arrSummaryReport            = array();
         $this->strTemporaryDirectory       = $arrConfig['temp_dir_path'];
         $this->strLogsDirectoryPath        = $arrConfig['logs_dir_path'];
         $this->strWriteCommonLogTo         = $arrConfig['logs_dir_path'] . '/all.log';
@@ -723,7 +723,7 @@ class FromMySqlToPostgreSql
     {
         $strAddrCsv = $this->strTemporaryDirectory . '/' . $strTableName . '.csv';
         $intRetVal  = 0;
-        $arrRows    = [];
+        $arrRows    = array();
         $sql        = '';
         
         try {
@@ -770,7 +770,7 @@ class FromMySqlToPostgreSql
                  */
                 foreach ($arrRows as $arrRow) {
                     $boolValidCsvEntity  = true;
-                    $arrSanitizedCsvData = [];
+                    $arrSanitizedCsvData = array();
                     
                     foreach ($arrRow as $value) {
                         $strSanitizedValue = $this->sanitizeValue($value);
@@ -793,7 +793,7 @@ class FromMySqlToPostgreSql
                     if ($boolValidCsvEntity) {
                         fputcsv($resourceCsv, $arrSanitizedCsvData);
                     }
-                    
+                    $this->log("\t" . '-- Processed: "' . $intOffset . '" out of "' . $intRowsCnt . '"...' . PHP_EOL);
                     unset($arrRow, $arrSanitizedCsvData, $boolValidCsvEntity);
                 }
                 
@@ -901,7 +901,7 @@ class FromMySqlToPostgreSql
             );
             
             $this->connect();
-            $arrSqlReservedValues = [
+            $arrSqlReservedValues = array(
                 'CURRENT_DATE'        => 'CURRENT_DATE',
                 '0000-00-00'          => "'-INFINITY'",
                 'CURRENT_TIME'        => 'CURRENT_TIME',
@@ -914,7 +914,7 @@ class FromMySqlToPostgreSql
                 'UTC_DATE'            => "(CURRENT_DATE AT TIME ZONE 'UTC')",
                 'UTC_TIME'            => "(CURRENT_TIME AT TIME ZONE 'UTC')",
                 'UTC_TIMESTAMP'       => "(NOW() AT TIME ZONE 'UTC')",
-            ];
+            );
             
             foreach ($arrColumns as $arrColumn) {
                 if (empty($arrColumn['Default'])) {
@@ -1151,7 +1151,7 @@ class FromMySqlToPostgreSql
             $sql              = 'SHOW INDEX FROM `' . $strTableName . '`;';
             $stmt             = $this->mysql->query($sql);
             $arrIndices       = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $arrPgIndices     = [];
+            $arrPgIndices     = array();
             $intCounter       = 0;
             $strCurrentAction = '';
             unset($sql, $stmt);
@@ -1160,10 +1160,10 @@ class FromMySqlToPostgreSql
                 if (isset($arrPgIndices[$arrIndex['Key_name']])) {
                     $arrPgIndices[$arrIndex['Key_name']]['column_name'][] = '"' . $arrIndex['Column_name'] . '"';
                 } else {
-                    $arrPgIndices[$arrIndex['Key_name']] = [
+                    $arrPgIndices[$arrIndex['Key_name']] = array(
                         'is_unique'   => (0 == $arrIndex['Non_unique'] ? true : false),
-                        'column_name' => ['"' . $arrIndex['Column_name'] . '"'],
-                    ];
+                        'column_name' => array('"' . $arrIndex['Column_name'] . '"'),
+                    );
                 }
                 
                 unset($arrIndex);
@@ -1266,17 +1266,17 @@ class FromMySqlToPostgreSql
             
             $stmt           = $this->mysql->query($sql);
             $arrForeignKeys = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $arrConstraints = [];
+            $arrConstraints = array();
             unset($sql, $stmt);
             
             foreach ($arrForeignKeys as $arrFk) {
-                $arrConstraints[$arrFk['CONSTRAINT_NAME']][] = [
+                $arrConstraints[$arrFk['CONSTRAINT_NAME']][] = array(
                     'column_name'            => $arrFk['COLUMN_NAME'],
                     'referenced_table_name'  => $arrFk['REFERENCED_TABLE_NAME'],
                     'referenced_column_name' => $arrFk['REFERENCED_COLUMN_NAME'],
                     'update_rule'            => $arrFk['UPDATE_RULE'],
                     'delete_rule'            => $arrFk['DELETE_RULE'],
-                ];
+                );
                 
                 unset($arrFk);
             }
@@ -1284,8 +1284,8 @@ class FromMySqlToPostgreSql
             unset($arrForeignKeys);
             
             foreach ($arrConstraints as $arrRows) {
-                $arrFKs        = [];
-                $arrPKs        = [];
+                $arrFKs        = array();
+                $arrPKs        = array();
                 $strRefTbName  = '';
                 $strDeleteRule = '';
                 $strUpdateRule = '';
@@ -1385,7 +1385,7 @@ class FromMySqlToPostgreSql
     private function setConstraints($strTableName)
     {
         $this->log("\t" . '-- Trying to set constraints for "' . $this->strSchema . '"."' . $strTableName . '"...' . PHP_EOL);
-        $arrColumns = [];
+        $arrColumns = array();
         $sql        = '';
         
         try {
@@ -1431,7 +1431,7 @@ class FromMySqlToPostgreSql
         $intLargestRecordsTitle = 0;
         $intLargestTimeTitle    = 0;
         
-        array_unshift($this->arrSummaryReport, ['TABLE', 'RECORDS', 'DATA LOAD TIME']);
+        array_unshift($this->arrSummaryReport, array('TABLE', 'RECORDS', 'DATA LOAD TIME'));
         
         foreach ($this->arrSummaryReport as $arrReport) {
             $intTableTitleLength    = strlen($arrReport[0]);
@@ -1541,11 +1541,11 @@ class FromMySqlToPostgreSql
             }
             
             $floatEndCopy             = microtime(true);
-            $this->arrSummaryReport[] = [
+            $this->arrSummaryReport[] = array(
                 $this->strSchema . '.' . $arrTable['Tables_in_' . $this->strMySqlDbName],
                 $intRecords,
                 round(($floatEndCopy - $floatStartCopy), 3) . ' seconds',
-            ];
+            );
             
             unset($arrTable, $floatStartCopy, $floatEndCopy, $intRecords);
         }
