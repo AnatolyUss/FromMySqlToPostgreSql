@@ -273,7 +273,7 @@ class FromMySqlToPostgreSql
     
     /**
      * Check if both servers are connected.
-     * If not, then create connections.
+     * If not, than create connections.
      * 
      * @param  void
      * @return void
@@ -282,7 +282,7 @@ class FromMySqlToPostgreSql
     {
         if (empty($this->mysql)) {
             $arrSrcInput = explode(',', $this->strSourceConString);
-            $this->mysql = new \PDO($arrSrcInput[0], $arrSrcInput[1], $arrSrcInput[2], array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
+            $this->mysql = new \PDO($arrSrcInput[0], $arrSrcInput[1], $arrSrcInput[2]);
             $this->mysql->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
             $this->mysql->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         }
@@ -575,8 +575,8 @@ class FromMySqlToPostgreSql
             case '0':
                 return '0';
             
-            case '0000-00-00 00:00:00':
             case '0000-00-00':
+            case '0000-00-00 00:00:00':
                 return '-INFINITY';
             
             default:
@@ -626,8 +626,8 @@ class FromMySqlToPostgreSql
                             $value = '0';
                             break;
                         
-                        case '0000-00-00 00:00:00':
                         case '0000-00-00':
+                        case '0000-00-00 00:00:00':
                             $value = '-INFINITY';
                             break;
                     }
@@ -674,11 +674,9 @@ class FromMySqlToPostgreSql
             unset($stmtInsert, $strInsert, $strColumns, $strValues);
             
         } catch (\PDOException $e) {
-             $strMsg = __METHOD__ . PHP_EOL;
-            
+            $strMsg = __METHOD__ . PHP_EOL;
             $this->generateError($e, $strMsg, $strInsert);
             unset($strMsg);
-            return $intRowsInserted;
         }
         
         return $intRowsInserted;
@@ -714,17 +712,108 @@ class FromMySqlToPostgreSql
     }
     
     /**
-     * Populate given table using "PostgreSql COPY".
+     * Load a chunk of data using "PostgreSql COPY".
+     * 
+     * @param  string $strTableName
+     * @param  int    $intOffset
+     * @param  int    $intRowsInChunk
+     * @param  int    $intRowsCnt
+     * @return int
+     */
+    private function populateTableWorker($strTableName, $intOffset, $intRowsInChunk, $intRowsCnt)
+    {
+        $intRetVal   = 0;
+        $arrRows     = [];
+        $sql         = '';
+        $strAddrCsv  = '';
+        $resourceCsv = null;
+        
+        try {
+            $this->connect();
+            $strAddrCsv  = $this->strTemporaryDirectory . '/' . $strTableName . $intOffset . '.csv';
+            $resourceCsv = fopen($strAddrCsv, 'w');
+            $sql         = 'SELECT * FROM `' . $strTableName . '` LIMIT ' . $intOffset . ', ' . $intRowsInChunk . ';';
+            $stmt        = $this->mysql->query($sql);
+            $arrRows     = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            unset($sql, $stmt);
+            
+            /*
+             * Sanitize data and insert it into temporary csv file.
+             */
+            foreach ($arrRows as $arrRow) {
+                $boolValidCsvEntity  = true;
+                $arrSanitizedCsvData = [];
+                
+                foreach ($arrRow as $value) {
+                    $strSanitizedValue = $this->sanitizeValue($value);
+                    
+                    if (mb_check_encoding($strSanitizedValue, $this->strEncoding)) {
+                        $arrSanitizedCsvData[] = $strSanitizedValue;
+                    } else {
+                        $strSanitizedValue = mb_convert_encoding($strSanitizedValue, $this->strEncoding);
+                        
+                        if (mb_check_encoding($strSanitizedValue, $this->strEncoding)) {
+                            $arrSanitizedCsvData[] = $strSanitizedValue;
+                        } else {
+                            $boolValidCsvEntity = false;
+                        }
+                    }
+                    
+                    unset($value, $strSanitizedValue);
+                }
+                
+                if ($boolValidCsvEntity) {
+                    fputcsv($resourceCsv, $arrSanitizedCsvData);
+                }
+                
+                unset($arrRow, $arrSanitizedCsvData, $boolValidCsvEntity);
+            }
+            
+            // Copy current chunk into database.
+            $sql  = "COPY \"" . $this->strSchema . "\".\"" . $strTableName . "\" FROM '" . $strAddrCsv . "' DELIMITER ',' CSV;";
+            
+            $stmt      = $this->pgsql->query($sql);
+            $intRetVal = count($stmt->fetchAll(\PDO::FETCH_ASSOC));
+            unset($sql, $stmt);
+            $this->log("\t-- For now inserted: " . $intRetVal . ' rows, Total: ' . $intRowsCnt . PHP_EOL);
+            
+            if ($intRowsCnt != 0 && 0 == $intRetVal) {
+                /*
+                 * In most cases (~100%) the control will not get here.
+                 * Load current chunk using prepared statment.
+                 */
+                $intRetVal = $this->populateTableByPrepStmt($arrRows, $strTableName, 0, $intRowsInChunk, 0);
+            }
+            
+        } catch (\PDOException $e) {
+            $strMsg = __METHOD__ . PHP_EOL;
+            $this->generateError($e, $strMsg, $sql);
+            unset($strMsg, $sql);
+            
+            /*
+             * If the control got here, then no (usable) rows were inserted.
+             * Load current chunk using prepared statment.
+             */
+            $intRetVal = $this->populateTableByPrepStmt($arrRows, $strTableName, 0, $intRowsInChunk, 0);
+        }
+        
+        fclose($resourceCsv);
+        unlink($strAddrCsv);
+        unset($resourceCsv, $strAddrCsv, $arrRows);
+        echo PHP_EOL, PHP_EOL;
+        return $intRetVal;
+    }
+    
+    /**
+     * Populate current table.
      * 
      * @param  string $strTableName
      * @return int
      */
     private function populateTable($strTableName)
     {
-        $strAddrCsv = $this->strTemporaryDirectory . '/' . $strTableName . '.csv';
-        $intRetVal  = 0;
-        $arrRows    = [];
-        $sql        = '';
+        $intRetVal = 0;
+        $sql       = '';
         
         try {
             $this->log("\t" . '-- Populating table "' . $this->strSchema . '"."' . $strTableName . '" ' . PHP_EOL);
@@ -744,11 +833,10 @@ class FromMySqlToPostgreSql
             $floatTableSizeInMb = $floatTableSizeInMb < 1 ? 1 : $floatTableSizeInMb;
             unset($sql, $stmt, $arrRows);
             
-            $resourceCsv    = fopen($strAddrCsv, 'w');
-            $sql            = "SHOW TABLE STATUS FROM `" . $this->strMySqlDbName . "` WHERE Name = '" . $strTableName . "';";
+            $sql            = 'SELECT COUNT(1) AS rows_count FROM `' . $strTableName . '`;';
             $stmt           = $this->mysql->query($sql);
             $arrRows        = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $intRowsCnt     = (int) $arrRows[0]['Rows'];
+            $intRowsCnt     = (int) $arrRows[0]['rows_count'];
             $floatChunksCnt = $floatTableSizeInMb / $this->floatDataChunkSize;
             $floatChunksCnt = $floatChunksCnt < 1 ? 1 : $floatChunksCnt;
             $intRowsInChunk = ceil($intRowsCnt / $floatChunksCnt);
@@ -760,83 +848,17 @@ class FromMySqlToPostgreSql
             );
             
             for ($intOffset = 0; $intOffset < $intRowsCnt; $intOffset += $intRowsInChunk) {
-                $sql     = 'SELECT * FROM `' . $strTableName . '` LIMIT ' . $intOffset . ', ' . $intRowsInChunk . ';';
-                $stmt    = $this->mysql->query($sql);
-                $arrRows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-                unset($sql, $stmt);
-                
-                /*
-                 * Sanitize data and insert it into temporary csv file.
-                 */
-                foreach ($arrRows as $arrRow) {
-                    $boolValidCsvEntity  = true;
-                    $arrSanitizedCsvData = [];
-                    
-                    foreach ($arrRow as $value) {
-                        $strSanitizedValue = $this->sanitizeValue($value);
-                        
-                        if (mb_check_encoding($strSanitizedValue, $this->strEncoding)) {
-                            $arrSanitizedCsvData[] = $strSanitizedValue;
-                        } else {
-                            $strSanitizedValue = mb_convert_encoding($strSanitizedValue, $this->strEncoding);
-                            
-                            if (mb_check_encoding($strSanitizedValue, $this->strEncoding)) {
-                                $arrSanitizedCsvData[] = $strSanitizedValue;
-                            } else {
-                                $boolValidCsvEntity = false;
-                            }
-                        }
-                        
-                        unset($value, $strSanitizedValue);
-                    }
-                    
-                    if ($boolValidCsvEntity) {
-                        fputcsv($resourceCsv, $arrSanitizedCsvData);
-                    }
-                    
-                    unset($arrRow, $arrSanitizedCsvData, $boolValidCsvEntity);
-                }
-                
-                unset($arrRows);
+                $intRetVal += $this->populateTableWorker($strTableName, $intOffset, $intRowsInChunk, $intRowsCnt);
             }
             
-            fclose($resourceCsv);
-            unset($resourceCsv);
-            
-            $sql  = "COPY \"" . $this->strSchema . "\".\"" . $strTableName . "\" FROM '" . $strAddrCsv . "' DELIMITER ',' CSV;";
-            $stmt = $this->pgsql->query($sql);
-            
-            if (false === $stmt) {
-                $this->log("\t" . '-- Failed to populate table: "' . $this->strSchema . '"."' . $strTableName . '"...' . PHP_EOL);
-            }
-            
-            $intRetVal = count($stmt->fetchAll(\PDO::FETCH_ASSOC));
-            $this->log("\t-- For now inserted: " . $intRetVal . ' rows' . PHP_EOL);
-            
-            if ($intRowsCnt != 0 && 0 == $intRetVal) {
-                /*
-                 * In most cases (~100%) the control will not get here.
-                 * Perform given table population using prepared statment.
-                 */
-                $intRetVal = $this->populateTableByPrepStmt($arrRows, $strTableName, 0, $intRowsCnt, 0);
-            }
-            
-            unset($sql, $stmt);
+            unset($intRowsCnt, $floatChunksCnt, $intRowsInChunk);
             
         } catch (\PDOException $e) {
             $strMsg = __METHOD__ . PHP_EOL;
             $this->generateError($e, $strMsg, $sql);
             unset($strMsg);
-            
-            /*
-             * If the control got here, then no (usable) rows were inserted.
-             * Perform given table population using prepared statment.
-             */
-            $intRetVal = $this->populateTableByPrepStmt($arrRows, $strTableName, 0, $intRowsCnt, 0);
         }
         
-        unlink($strAddrCsv);
-        unset($strAddrCsv, $intRowsCnt, $arrRows);
         echo PHP_EOL, PHP_EOL;
         return $intRetVal;
     }
@@ -1592,4 +1614,3 @@ class FromMySqlToPostgreSql
         unset($intTimeBegin, $intTimeEnd, $intExecTime, $intHours, $intMinutes, $intSeconds);
     }
 }
-
