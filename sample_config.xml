@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root>
-    <!-- <source> - a connection string to your MySql database. -->
-    <source>mysql:host=localhost;port=3306;dbname=your_db_name,root,123456</source>
-    
-    <!-- <target> - a connection string to your PostgreSql database. -->
-    <target>pgsql:host=localhost;port=5432;dbname=your_pg_db,postgres,123456789</target>
+    <!-- 
+        <source> - a connection string to your MySql database. 
+        Please ensure, that you have defined your connection string properly.
+        Ensure, that details like 'charset=UTF8' are included in your connection string (if necessary).
+    -->
+    <source>mysql:host=localhost;port=3306;dbname=your_db_name;charset=UTF8,root,</source>
     
     <!-- 
-        <encoding> - an encoding type of your PostgreSql database. 
+        <target> - a connection string to your PostgreSql database. 
+        Please ensure, that you have defined your connection string properly.
+        Ensure, that details like options='[double dash]client_encoding=UTF8' are included in your connection string (if necessary).
+    -->
+    <target>pgsql:host=localhost;port=5432;dbname=your_pg_db_name;options=--client_encoding=UTF8,postgres,7370142533</target>
+    
+    <!-- 
+        <encoding> - PHP encoding type. 
         If not supplied, then UTF-8 will be used as a default. 
     -->
     <encoding>UTF-8</encoding>
