@@ -12,7 +12,12 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
    MySql data types to corresponding PostgreSql data types, creates constraints,
    indeces, primary and foreign keys exactly as they were before migration.</li>
 
-<li> In order to migrate data fast - FromMySqlToPostgreSql uses PostgreSQL COPY protocol.
+<li>Ability to migrate big databases - in order to reduce RAM consumption <br/> 
+FromMySqlToPostgreSql will split each table's data into several chunks. <br />
+The chunk size can be adjusted easily via configuration file.</li>
+
+<li> Speed of data transfer - in order to migrate data fast <br />
+   FromMySqlToPostgreSql uses PostgreSQL COPY protocol.<br />
    Note: migration of tables, containing "varbinary" or "blob" columns may be 
    considerably slower.</li>
 
@@ -20,7 +25,7 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
    about every step, it takes during the execution.</li>
 <li>
  Ease of configuration - all the parameters required for migration 
- (4 parameters) should be put in one single file, 
+ (5 parameters) should be put in one single file, 
  which can be in either "xml" or "json" format.</li>
 </ul>
 
@@ -68,7 +73,7 @@ from MySql to PostgreSql as easy and smooth as possible.</p>
    <a href="mailto:anatolyuss@gmail.com?subject=FromMySqlToPostgreSql">anatolyuss@gmail.com</a></p>
 
 <h3>VERSION</h3>
-<p>Current version is 1.3.0<br />
+<p>Current version is 1.4.0<br />
 (major version . improvements . bug fixes)</p>
 
 
@@ -78,9 +83,7 @@ The entire process of migration 59.6 MB database (49 tables, 570750 rows),<br />
 which includes data types mapping, creation of tables, constraints, indeces, <br />
 PKs, FKs, migration of data, garbage-collection and analyzing the newly created <br />
 PostgreSql database took 3 minutes 6 seconds.</p>
-<p>Tested using MySql Community Server (5.6.21) and PostgreSql (9.4).<br />
-The entire process of migration 3.1 GB database (56 tables, 8732967 rows),<br /> 
-with the same steps as above, took 2 hours and 10 minutes.</p> 
+
 
 <h3>LICENSE</h3>
 <p>FromMySqlToPostgreSql is available under "GNU GENERAL PUBLIC LICENSE" (v. 3) <br />
@@ -94,4 +97,3 @@ Any error will be immediately written into the error log file.</p>
 
 <h3>ACKNOWLEDGEMENTS</h3>
 <p>Big thanks to Thierry Daguin and Marcel Gsteiger for their valuable remarks.</p> 
-
