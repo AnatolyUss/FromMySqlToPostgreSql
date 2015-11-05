@@ -587,14 +587,14 @@ class FromMySqlToPostgreSql
     /**
      * Populates given table using "prepared statments" (worker).
      * 
-     * @param  array  &$arrRows
+     * @param  array   $arrRows
      * @param  string  $strTableName
      * @param  int    &$intStartInsertionsFromIndex
      * @param  int     $intRowsInserted
      * @return int
      */
     private function populateTableByPrepStmtWorker(
-        array &$arrRows,
+        array $arrRows,
         $strTableName,
         &$intStartInsertionsFromIndex,
         $intRowsInserted
@@ -664,7 +664,7 @@ class FromMySqlToPostgreSql
                 
                 if ($stmtInsert->execute()) {
                     $intRowsInserted++;
-                    echo "\t-- For now inserted: $intRowsInserted rows\r";
+                    echo "\t-- For now inserted: $intRowsInserted rows from current data chunk\r";
                 } else {
                     return $intRowsInserted;
                 }
@@ -685,15 +685,15 @@ class FromMySqlToPostgreSql
     /**
      * Populates given table using "prepared statments".
      * 
-     * @param  array  &$arrRows
-     * @param  string  $strTableName
-     * @param  int     $intStartInsertionsFromIndex
-     * @param  int     $intTotalRowsToInsert
-     * @param  int     $intRowsInserted
+     * @param  array  $arrRows
+     * @param  string $strTableName
+     * @param  int    $intStartInsertionsFromIndex
+     * @param  int    $intTotalRowsToInsert
+     * @param  int    $intRowsInserted
      * @return int
      */
     private function populateTableByPrepStmt(
-        array &$arrRows,
+        array $arrRows,
         $strTableName,
         $intStartInsertionsFromIndex = 0,
         $intTotalRowsToInsert        = 0,
@@ -708,6 +708,7 @@ class FromMySqlToPostgreSql
             );
         }
         
+        echo PHP_EOL;
         return $intRowsInserted;
     }
     
@@ -730,11 +731,12 @@ class FromMySqlToPostgreSql
         
         try {
             $this->connect();
-            $strAddrCsv  = $this->strTemporaryDirectory . '/' . $strTableName . $intOffset . '.csv';
-            $resourceCsv = fopen($strAddrCsv, 'w');
-            $sql         = 'SELECT * FROM `' . $strTableName . '` LIMIT ' . $intOffset . ', ' . $intRowsInChunk . ';';
-            $stmt        = $this->mysql->query($sql);
-            $arrRows     = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $strAddrCsv     = $this->strTemporaryDirectory . '/' . $strTableName . $intOffset . '.csv';
+            $resourceCsv    = fopen($strAddrCsv, 'w');
+            $sql            = 'SELECT * FROM `' . $strTableName . '` LIMIT ' . $intOffset . ', ' . $intRowsInChunk . ';';
+            $stmt           = $this->mysql->query($sql);
+            $arrRows        = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $intRowsInChunk = count($arrRows); // An actual amount of records in current chunk.
             unset($sql, $stmt);
             
             /*
@@ -775,7 +777,7 @@ class FromMySqlToPostgreSql
             $stmt      = $this->pgsql->query($sql);
             $intRetVal = count($stmt->fetchAll(\PDO::FETCH_ASSOC));
             unset($sql, $stmt);
-            $this->log("\t-- For now inserted: " . $intRetVal . ' rows, Total: ' . $intRowsCnt . PHP_EOL);
+            $this->log("\t-- For now inserted: " . $intRetVal . ' rows, Total: ' . $intRowsCnt . ' in current data chunk' . PHP_EOL);
             
             if ($intRowsCnt != 0 && 0 == $intRetVal) {
                 /*
@@ -800,7 +802,6 @@ class FromMySqlToPostgreSql
         fclose($resourceCsv);
         unlink($strAddrCsv);
         unset($resourceCsv, $strAddrCsv, $arrRows);
-        echo PHP_EOL, PHP_EOL;
         return $intRetVal;
     }
     
@@ -1614,3 +1615,4 @@ class FromMySqlToPostgreSql
         unset($intTimeBegin, $intTimeEnd, $intExecTime, $intHours, $intMinutes, $intSeconds);
     }
 }
+
