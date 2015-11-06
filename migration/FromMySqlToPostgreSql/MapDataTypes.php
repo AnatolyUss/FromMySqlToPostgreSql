@@ -79,7 +79,7 @@ class MapDataTypes
         ],
         
         'bigint' => [
-            'increased_size'           => 'bigint', 
+            'increased_size'           => 'numeric(20)',
             'type'                     => 'bigint',
             'mySqlVarLenPgSqlFixedLen' => true,
         ],
