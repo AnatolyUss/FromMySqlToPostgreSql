@@ -579,9 +579,11 @@ class FromMySqlToPostgreSql
             case '0000-00-00 00:00:00':
                 return '-INFINITY';
 
-            case chr(0): return '0';
+            case chr(0): 
+                return '0';
 
-            case chr(1): return '1';
+            case chr(1): 
+                return '1';
 
             default:
                 return $strValue;
