@@ -43,7 +43,7 @@ class MapDataTypes
      */
     private static $arrMySqlPgSqlTypesMap = [
         'bit' => [
-            'increased_size'           => 'smallint', 
+            'increased_size'           => 'bit varying', 
             'type'                     => 'bit',
             'mySqlVarLenPgSqlFixedLen' => false,
         ],
@@ -79,7 +79,7 @@ class MapDataTypes
         ],
         
         'bigint' => [
-            'increased_size'           => 'numeric(20)',
+            'increased_size'           => 'numeric',
             'type'                     => 'bigint',
             'mySqlVarLenPgSqlFixedLen' => true,
         ],
