@@ -959,12 +959,14 @@ class FromMySqlToPostgreSql
                 if (isset($arrSqlReservedValues[$arrColumn['Default']])) {
                     $sql .= $arrSqlReservedValues[$arrColumn['Default']] . ';';
                 } else {
-                    $sql .= " '" . $arrColumn['Default'] . "';";
+                    $sql .= is_numeric($arrColumn['Default']) 
+                          ? $arrColumn['Default'] . ';' 
+                          : " '" . $arrColumn['Default'] . "';";
                 }
                 
                 $stmt = $this->pgsql->query($sql);
                 
-                if (false === $stmt) {
+                if ($stmt === false) {
                     $this->log("\t" . '-- Cannot define the default value for column "' . $arrColumn['Field'] . '"...' . PHP_EOL);
                 } else {
                     $this->log("\t" . '-- The default value for column "' . $arrColumn['Field'] . '" has defined...' . PHP_EOL);
@@ -1257,10 +1259,9 @@ class FromMySqlToPostgreSql
      * Create foreign keys.
      * 
      * @param  string $strTableName
-     * @param  array  $arrColumns
      * @return void
      */
-    private function processForeignKey($strTableName, array $arrColumns)
+    private function processForeignKey($strTableName)
     {
         $sql = '';
         
@@ -1336,7 +1337,7 @@ class FromMySqlToPostgreSql
                 
                 if (false === $stmt) {
                     $this->log(
-                        "\t" . '-- Failed to set foreign key for table "' 
+                        "\t" . '-- Failed to set foreign keys for table "' 
                         . $this->strSchema . '"."' . $strTableName . '"...' . PHP_EOL
                     );
                     
@@ -1445,45 +1446,6 @@ class FromMySqlToPostgreSql
         
         return true;
     }
-
-
-    /**
-     * Set foreign key constraints for given table.
-     * 
-     * @param  string $strTableName
-     * @return bool
-     */
-    private function setForeignKeyConstraints($strTableName)
-    {
-        $this->log("\t" . '-- Trying to set foreign key constraints for "' . $this->strSchema . '"."' . $strTableName . '"...' . PHP_EOL);
-        $arrColumns = [];
-        $sql        = '';
-        
-        try {
-            $this->connect();
-            $sql        = 'SHOW COLUMNS FROM `' . $strTableName . '`;';
-            $stmt       = $this->mysql->query($sql);
-            $arrColumns = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            unset($sql, $stmt);
-            
-        } catch (\PDOException $e) {
-            $strMsg = __METHOD__ . PHP_EOL . "\t" . '-- Failed to set constraints for "' . $this->strSchema 
-                    . '"."' . $strTableName . '"...' . PHP_EOL;
-            
-            $this->generateError($e, $strMsg, $sql);
-            unset($strMsg);
-            return false;
-        }
-        
-        $this->processForeignKey($strTableName, $arrColumns);
-        $this->log(
-            "\t" . '-- Foreign key constraints for "' . $this->strSchema . '"."' . $strTableName 
-            . '" were set successfully...' . PHP_EOL
-        );
-        
-        return true;
-    }
-
     
     /**
      * Generates a summary report.
@@ -1624,16 +1586,16 @@ class FromMySqlToPostgreSql
             $this->setTableConstraints($arrTable['Tables_in_' . $this->strMySqlDbName]);
             unset($arrTable);
         }
-
+        
         /*
          * Set foreign key constraints, then run "vacuum full" and "ANALYZE" for each table.
          */
         foreach ($this->arrTablesToMigrate as $arrTable) {
-            $this->setForeignKeyConstraints($arrTable['Tables_in_' . $this->strMySqlDbName]);
+            $this->processForeignKey($arrTable['Tables_in_' . $this->strMySqlDbName]);
             $this->runVacuumFullAndAnalyze($arrTable['Tables_in_' . $this->strMySqlDbName]);
             unset($arrTable);
         }
-
+        
         /*
          * Attempt to create views.
          */
