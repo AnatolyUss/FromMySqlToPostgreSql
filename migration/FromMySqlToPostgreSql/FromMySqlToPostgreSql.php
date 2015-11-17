@@ -1413,7 +1413,7 @@ class FromMySqlToPostgreSql
      */
     private function setTableConstraints($strTableName)
     {
-        $this->log("\t" . '-- Trying to set constraints for "' . $this->strSchema . '"."' . $strTableName . '"...' . PHP_EOL);
+        $this->log("\t" . '-- Trying to set table constraints for "' . $this->strSchema . '"."' . $strTableName . '"...' . PHP_EOL);
         $arrColumns = [];
         $sql        = '';
         
@@ -1618,15 +1618,22 @@ class FromMySqlToPostgreSql
         }
         
         /*
-         * Set constraints, then run "vacuum full" and "ANALYZE" for each table.
+         * Set table constraints.
          */
         foreach ($this->arrTablesToMigrate as $arrTable) {
             $this->setTableConstraints($arrTable['Tables_in_' . $this->strMySqlDbName]);
+            unset($arrTable);
+        }
+
+        /*
+         * Set foreign key constraints, then run "vacuum full" and "ANALYZE" for each table.
+         */
+        foreach ($this->arrTablesToMigrate as $arrTable) {
             $this->setForeignKeyConstraints($arrTable['Tables_in_' . $this->strMySqlDbName]);
             $this->runVacuumFullAndAnalyze($arrTable['Tables_in_' . $this->strMySqlDbName]);
             unset($arrTable);
         }
-        
+
         /*
          * Attempt to create views.
          */
