@@ -12,7 +12,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *  
+ * 
  * You should have received a copy of the GNU General Public License
  * along with this program (please see the "LICENSE.md" file).  
  * If not, see <http://www.gnu.org/licenses/gpl.txt>.
@@ -725,10 +725,16 @@ class FromMySqlToPostgreSql
      * @param  int    $intOffset
      * @param  int    $intRowsInChunk
      * @param  int    $intRowsCnt
+     * @param  int    $intForNowInserted
      * @return int
      */
-    private function populateTableWorker($strTableName, $intOffset, $intRowsInChunk, $intRowsCnt)
-    {
+    private function populateTableWorker(
+        $strTableName, 
+        $intOffset, 
+        $intRowsInChunk, 
+        $intRowsCnt, 
+        $intForNowInserted
+    ) {
         $intRetVal   = 0;
         $arrRows     = [];
         $sql         = '';
@@ -783,7 +789,10 @@ class FromMySqlToPostgreSql
             $stmt      = $this->pgsql->query($sql);
             $intRetVal = count($stmt->fetchAll(\PDO::FETCH_ASSOC));
             unset($sql, $stmt);
-            $this->log("\t-- For now inserted: " . $intRetVal . ' rows, Total: ' . $intRowsCnt . ' in current data chunk' . PHP_EOL);
+            $this->log(
+                "\t-- For now inserted: " . ($intForNowInserted + $intRetVal) . ' rows, '
+                . 'Total rows in "' . $this->strSchema . '"."' . $strTableName . '": ' . $intRowsCnt . PHP_EOL
+            );
             
             if ($intRowsCnt != 0 && 0 == $intRetVal) {
                 /*
@@ -840,13 +849,14 @@ class FromMySqlToPostgreSql
             $floatTableSizeInMb = $floatTableSizeInMb < 1 ? 1 : $floatTableSizeInMb;
             unset($sql, $stmt, $arrRows);
             
-            $sql            = 'SELECT COUNT(1) AS rows_count FROM `' . $strTableName . '`;';
-            $stmt           = $this->mysql->query($sql);
-            $arrRows        = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $intRowsCnt     = (int) $arrRows[0]['rows_count'];
-            $floatChunksCnt = $floatTableSizeInMb / $this->floatDataChunkSize;
-            $floatChunksCnt = $floatChunksCnt < 1 ? 1 : $floatChunksCnt;
-            $intRowsInChunk = ceil($intRowsCnt / $floatChunksCnt);
+            $sql               = 'SELECT COUNT(1) AS rows_count FROM `' . $strTableName . '`;';
+            $stmt              = $this->mysql->query($sql);
+            $arrRows           = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $intRowsCnt        = (int) $arrRows[0]['rows_count'];
+            $floatChunksCnt    = $floatTableSizeInMb / $this->floatDataChunkSize;
+            $floatChunksCnt    = $floatChunksCnt < 1 ? 1 : $floatChunksCnt;
+            $intRowsInChunk    = ceil($intRowsCnt / $floatChunksCnt);
+            $intForNowInserted = 0;
             unset($sql, $stmt, $arrRows);
             
             $this->log(
@@ -855,7 +865,15 @@ class FromMySqlToPostgreSql
             );
             
             for ($intOffset = 0; $intOffset < $intRowsCnt; $intOffset += $intRowsInChunk) {
-                $intRetVal += $this->populateTableWorker($strTableName, $intOffset, $intRowsInChunk, $intRowsCnt);
+                $intForNowInserted = $this->populateTableWorker(
+                    $strTableName, 
+                    $intOffset, 
+                    $intRowsInChunk, 
+                    $intRowsCnt, 
+                    $intForNowInserted
+                );
+                
+                $intRetVal += $intForNowInserted;
             }
             
             unset($intRowsCnt, $floatChunksCnt, $intRowsInChunk);
