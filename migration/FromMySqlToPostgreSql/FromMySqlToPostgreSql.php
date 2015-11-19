@@ -856,7 +856,6 @@ class FromMySqlToPostgreSql
             $floatChunksCnt    = $floatTableSizeInMb / $this->floatDataChunkSize;
             $floatChunksCnt    = $floatChunksCnt < 1 ? 1 : $floatChunksCnt;
             $intRowsInChunk    = ceil($intRowsCnt / $floatChunksCnt);
-            $intForNowInserted = 0;
             unset($sql, $stmt, $arrRows);
             
             $this->log(
@@ -865,15 +864,13 @@ class FromMySqlToPostgreSql
             );
             
             for ($intOffset = 0; $intOffset < $intRowsCnt; $intOffset += $intRowsInChunk) {
-                $intForNowInserted = $this->populateTableWorker(
+                $intRetVal += $this->populateTableWorker(
                     $strTableName, 
                     $intOffset, 
                     $intRowsInChunk, 
                     $intRowsCnt, 
-                    $intForNowInserted
+                    $intRetVal
                 );
-                
-                $intRetVal += $intForNowInserted;
             }
             
             unset($intRowsCnt, $floatChunksCnt, $intRowsInChunk);
