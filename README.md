@@ -31,10 +31,11 @@ The chunk size can be adjusted easily via configuration file.</li>
 
 <h3>SYSTEM REQUIREMENTS</h3>
 <ul>
-<li> PHP (CLI) 5.4 or above.</li>
-<li> PDO_MYSQL support.</li>
-<li> PDO_PGSQL support.</li>
-<li> register_argc_argv should be enabled (check php.ini).</li>
+<li> <b>PHP (CLI) 5.4</b> or above </li>
+<li> <b>PDO_MYSQL</b> should be installed and enabled </li>
+<li> <b>PDO_PGSQL</b> should be installed and enabled </li>
+<li> <b>mbstring</b> should be installed and enabled </li>
+<li> <b>register_argc_argv</b> should be enabled (check php.ini).</li>
 </ul>
 
 <h3>USAGE</h3>
