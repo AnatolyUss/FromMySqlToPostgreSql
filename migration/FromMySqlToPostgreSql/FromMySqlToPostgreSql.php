@@ -1213,6 +1213,8 @@ class FromMySqlToPostgreSql
                     $arrPgIndices[$arrIndex['Key_name']] = [
                         'is_unique'   => (0 == $arrIndex['Non_unique'] ? true : false),
                         'column_name' => ['"' . $arrIndex['Column_name'] . '"'],
+                        /* TODO: consider to define MapIndexTypes::map() for Index types */
+                        'Index_type' => ' USING '. (($arrIndex['Index_type'] == 'SPATIAL')? ' GIST ' : $arrIndex['Index_type']) . ' ',
                     ];
                 }
 
@@ -1237,8 +1239,9 @@ class FromMySqlToPostgreSql
                     $strCurrentAction = 'index';
                     $sql              = 'CREATE ' . ($arrIndex['is_unique'] ? 'UNIQUE ' : '') . 'INDEX "'
                                       . $this->strSchema . '_' . $strTableName . '_' . $strColumnName . '_idx" ON "'
-                                      . $this->strSchema . '"."' . $strTableName
-                                      . '" (' . implode(',', $arrIndex['column_name']) . ');';
+                                      . $this->strSchema . '"."' . $strTableName . '"'
+                                      . $arrIndex['Index_type']
+                                      . ' (' . implode(',', $arrIndex['column_name']) . ');';
 
                     unset($strColumnName);
                 }
