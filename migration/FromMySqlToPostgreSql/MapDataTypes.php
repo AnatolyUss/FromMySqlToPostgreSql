@@ -156,6 +156,12 @@ class MapDataTypes
             'mySqlVarLenPgSqlFixedLen' => false,
         ],
         
+        'geometry' => [
+            'increased_size'           => '',
+            'type'                     => 'geometry',
+            'mySqlVarLenPgSqlFixedLen' => false,
+        ],
+
         'point' => [
             'increased_size'           => '', 
             'type'                     => 'point',

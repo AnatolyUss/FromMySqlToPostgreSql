@@ -730,6 +730,7 @@ class FromMySqlToPostgreSql
      */
     private function populateTableWorker(
         $strTableName,
+        $selectFieldList,
         $intOffset,
         $intRowsInChunk,
         $intRowsCnt,
@@ -745,7 +746,7 @@ class FromMySqlToPostgreSql
             $this->connect();
             $strAddrCsv     = $this->strTemporaryDirectory . '/' . $strTableName . $intOffset . '.csv';
             $resourceCsv    = fopen($strAddrCsv, 'w');
-            $sql            = 'SELECT * FROM `' . $strTableName . '` LIMIT ' . $intOffset . ', ' . $intRowsInChunk . ';';
+            $sql            = 'SELECT ' . $selectFieldList . ' FROM `' . $strTableName . '` LIMIT ' . $intOffset . ', ' . $intRowsInChunk . ';';
             $stmt           = $this->mysql->query($sql);
             $arrRows        = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $intRowsInChunk = count($arrRows); // An actual amount of records in current chunk.
@@ -856,6 +857,27 @@ class FromMySqlToPostgreSql
             $intRowsInChunk    = ceil($intRowsCnt / $floatChunksCnt);
             unset($sql, $stmt, $arrRows);
 
+            /* Build field list for SELECT from MySQL and apply
+             * optional casting or function based on field type */
+            $sql        = 'SHOW COLUMNS FROM `' . $strTableName . '`;';
+            $stmt       = $this->mysql->query($sql);
+            $arrColumns = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            unset($sql, $stmt);
+
+            $selectFieldList = "";
+            foreach ($arrColumns as $arrColumn) {
+            	/* Apply hex(ST_AsWKB(...)) due to issue in https://bugs.mysql.com/bug.php?id=69798 */
+            	if(strtolower(trim($arrColumn['Type'])) == 'geometry') {
+            		$fieldName = "hex(ST_AsWKB(" . $arrColumn['Field'] . "))";
+            	} else {
+            		$fieldName = $arrColumn['Field'];
+            	}
+            	$selectFieldList .= $fieldName.", ";
+            	unset($arrColumn);
+            }
+            $selectFieldList = trim($selectFieldList, " ,");
+            /* End field list for SELECT from MySQL */
+
             $this->log(
                 "\t" . '-- Total rows to insert into "' . $this->strSchema . '"."'
                 . $strTableName . '": ' . $intRowsCnt . PHP_EOL
@@ -864,6 +886,7 @@ class FromMySqlToPostgreSql
             for ($intOffset = 0; $intOffset < $intRowsCnt; $intOffset += $intRowsInChunk) {
                 $intRetVal += $this->populateTableWorker(
                     $strTableName,
+                    $selectFieldList,
                     $intOffset,
                     $intRowsInChunk,
                     $intRowsCnt,
@@ -1190,6 +1213,8 @@ class FromMySqlToPostgreSql
                     $arrPgIndices[$arrIndex['Key_name']] = [
                         'is_unique'   => (0 == $arrIndex['Non_unique'] ? true : false),
                         'column_name' => ['"' . $arrIndex['Column_name'] . '"'],
+                        /* TODO: consider to define MapIndexTypes::map() for Index types */
+                        'Index_type' => ' USING '. (($arrIndex['Index_type'] == 'SPATIAL')? ' GIST ' : $arrIndex['Index_type']) . ' ',
                     ];
                 }
 
@@ -1214,8 +1239,9 @@ class FromMySqlToPostgreSql
                     $strCurrentAction = 'index';
                     $sql              = 'CREATE ' . ($arrIndex['is_unique'] ? 'UNIQUE ' : '') . 'INDEX "'
                                       . $this->strSchema . '_' . $strTableName . '_' . $strColumnName . '_idx" ON "'
-                                      . $this->strSchema . '"."' . $strTableName
-                                      . '" (' . implode(',', $arrIndex['column_name']) . ');';
+                                      . $this->strSchema . '"."' . $strTableName . '"'
+                                      . $arrIndex['Index_type']
+                                      . ' (' . implode(',', $arrIndex['column_name']) . ');';
 
                     unset($strColumnName);
                 }
