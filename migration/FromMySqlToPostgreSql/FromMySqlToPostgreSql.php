@@ -722,6 +722,7 @@ class FromMySqlToPostgreSql
      * Load a chunk of data using "PostgreSql COPY".
      *
      * @param  string $strTableName
+     * @param  string $strSelectFieldList
      * @param  int    $intOffset
      * @param  int    $intRowsInChunk
      * @param  int    $intRowsCnt
@@ -730,7 +731,7 @@ class FromMySqlToPostgreSql
      */
     private function populateTableWorker(
         $strTableName,
-        $selectFieldList,
+        $strSelectFieldList,
         $intOffset,
         $intRowsInChunk,
         $intRowsCnt,
@@ -746,7 +747,7 @@ class FromMySqlToPostgreSql
             $this->connect();
             $strAddrCsv     = $this->strTemporaryDirectory . '/' . $strTableName . $intOffset . '.csv';
             $resourceCsv    = fopen($strAddrCsv, 'w');
-            $sql            = 'SELECT ' . $selectFieldList . ' FROM `' . $strTableName . '` LIMIT ' . $intOffset . ', ' . $intRowsInChunk . ';';
+            $sql            = 'SELECT ' . $strSelectFieldList . ' FROM `' . $strTableName . '` LIMIT ' . $intOffset . ', ' . $intRowsInChunk . ';';
             $stmt           = $this->mysql->query($sql);
             $arrRows        = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $intRowsInChunk = count($arrRows); // An actual amount of records in current chunk.
@@ -857,26 +858,24 @@ class FromMySqlToPostgreSql
             $intRowsInChunk    = ceil($intRowsCnt / $floatChunksCnt);
             unset($sql, $stmt, $arrRows);
 
-            /* Build field list for SELECT from MySQL and apply
-             * optional casting or function based on field type */
-            $sql        = 'SHOW COLUMNS FROM `' . $strTableName . '`;';
-            $stmt       = $this->mysql->query($sql);
-            $arrColumns = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            // Build field list for SELECT from MySQL and apply optional casting or function based on field type.
+            $strSelectFieldList = '';
+            $sql                = 'SHOW COLUMNS FROM `' . $strTableName . '`;';
+            $stmt               = $this->mysql->query($sql);
+            $arrColumns         = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             unset($sql, $stmt);
 
-            $selectFieldList = "";
             foreach ($arrColumns as $arrColumn) {
-            	/* Apply hex(ST_AsWKB(...)) due to issue in https://bugs.mysql.com/bug.php?id=69798 */
-            	if(strtolower(trim($arrColumn['Type'])) == 'geometry') {
-            		$fieldName = "hex(ST_AsWKB(" . $arrColumn['Field'] . "))";
-            	} else {
-            		$fieldName = $arrColumn['Field'];
-            	}
-            	$selectFieldList .= $fieldName.", ";
-            	unset($arrColumn);
+                // Apply hex(ST_AsWKB(...)) due to issue in https://bugs.mysql.com/bug.php?id=69798
+                $strSelectFieldList .= $arrColumn['Type'] === 'geometry'
+                                       ? 'hex(ST_AsWKB(`' . $arrColumn['Field'] . '`)),'
+                                       : '`' . $arrColumn['Field'] . '`,';
+
+            	  unset($arrColumn);
             }
-            $selectFieldList = trim($selectFieldList, " ,");
-            /* End field list for SELECT from MySQL */
+
+            $strSelectFieldList = substr($strSelectFieldList, 0, -1);
+            // End field list for SELECT from MySQL.
 
             $this->log(
                 "\t" . '-- Total rows to insert into "' . $this->strSchema . '"."'
@@ -886,7 +885,7 @@ class FromMySqlToPostgreSql
             for ($intOffset = 0; $intOffset < $intRowsCnt; $intOffset += $intRowsInChunk) {
                 $intRetVal += $this->populateTableWorker(
                     $strTableName,
-                    $selectFieldList,
+                    $strSelectFieldList,
                     $intOffset,
                     $intRowsInChunk,
                     $intRowsCnt,
@@ -921,7 +920,7 @@ class FromMySqlToPostgreSql
         $this->log(
             PHP_EOL . "\t" . '-- Define "NULLs" for table: "' . $this->strSchema . '"."' . $strTableName . '"...' . PHP_EOL
         );
-        
+
         foreach ($arrColumns as $arrColumn) {
             try {
                 $this->connect();
@@ -1213,11 +1212,9 @@ class FromMySqlToPostgreSql
                     $arrPgIndices[$arrIndex['Key_name']] = [
                         'is_unique'   => (0 == $arrIndex['Non_unique'] ? true : false),
                         'column_name' => ['"' . $arrIndex['Column_name'] . '"'],
-                        /* TODO: consider to define MapIndexTypes::map() for Index types */
-                        'Index_type' => ' USING '. (($arrIndex['Index_type'] == 'SPATIAL')? ' GIST ' : $arrIndex['Index_type']) . ' ',
+                        'Index_type'  => ' USING ' . ($arrIndex['Index_type'] === 'SPATIAL' ? 'GIST' : $arrIndex['Index_type']),
                     ];
                 }
-
                 unset($arrIndex);
             }
 
@@ -1226,26 +1223,23 @@ class FromMySqlToPostgreSql
             foreach ($arrPgIndices as $strKeyName => $arrIndex) {
                 $sql = '';
 
-                if ('primary' == strtolower($strKeyName)) {
+                if (strtolower($strKeyName) === 'primary') {
                     $strCurrentAction = 'PK';
                     $sql              = 'ALTER TABLE "' . $this->strSchema . '"."' . $strTableName . '" '
                                       . 'ADD PRIMARY KEY(' . implode(',', $arrIndex['column_name']) . ');';
 
                 } else {
-                    /*
-                     * "schema_idxname_{integer}_idx" - is NOT a mistake.
-                     */
+                    // "schema_idxname_{integer}_idx" - is NOT a mistake.
                     $strColumnName    = str_replace('"', '', $arrIndex['column_name'][0]) . $intCounter;
                     $strCurrentAction = 'index';
                     $sql              = 'CREATE ' . ($arrIndex['is_unique'] ? 'UNIQUE ' : '') . 'INDEX "'
                                       . $this->strSchema . '_' . $strTableName . '_' . $strColumnName . '_idx" ON "'
-                                      . $this->strSchema . '"."' . $strTableName . '"'
-                                      . $arrIndex['Index_type']
+                                      . $this->strSchema . '"."' . $strTableName . '" ' . $arrIndex['Index_type']
                                       . ' (' . implode(',', $arrIndex['column_name']) . ');';
 
                     unset($strColumnName);
                 }
-
+                
                 $stmt = $this->pgsql->query($sql);
 
                 if (false === $stmt) {
