@@ -63,6 +63,7 @@ The chunk size can be adjusted easily via configuration file.</li>
       
    <li> Brief description of each configuration parameter will be found at 
       sample_config.json and sample_config.xml</li>
+   <li>Make sure, that username, you use in your PostgreSQL connection string defined as superuser (usually "postgres")<br> More info: <a href="http://www.postgresql.org/docs/current/static/sql-createrole.html">http://www.postgresql.org/docs/9.4/static/sql-createrole.html</a></li>
    </ul>
      
 <p><b>4.</b> Run the script from a terminal.<br /> 
