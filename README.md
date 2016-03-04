@@ -49,16 +49,16 @@ The chunk size can be adjusted easily via configuration file.</li>
 
 <h3>USAGE</h3>
 <p><b>1.</b> Create a new database.<br />&nbsp;&nbsp;&nbsp;
-   <b>Sample:</b>&nbsp; CREATE DATABASE my_postgresql_database;</p>
+   <b>Sample:</b><code>CREATE DATABASE my_postgresql_database;</code></p>
 
 <p><b>2.</b> Download FromMySqlToPostgreSql package and put it on the machine running 
    your PostgreSql.<br />
-   &nbsp;&nbsp;&nbsp;&nbsp;<b>Sample:</b>&nbsp; /path/to/FromMySqlToPostgreSql</p>
+   &nbsp;&nbsp;&nbsp;&nbsp;<b>Sample:</b><code> /path/to/FromMySqlToPostgreSql</code></p>
 
 <p><b>3.</b> Create configuration file in either "xml" or "json" format and put it on 
    the machine running your PostgreSql.<br /> 
    &nbsp;&nbsp;&nbsp;
-   <b>Sample:</b>&nbsp; /path/to/FromMySqlToPostgreSql/config.json &nbsp; or&nbsp; /path/to/FromMySqlToPostgreSql/config.xml</p>
+   <b>Sample:</b><code> /path/to/FromMySqlToPostgreSql/config.json</code> &nbsp; or&nbsp; <code> /path/to/FromMySqlToPostgreSql/config.xml</code></p>
    <p><b>Remarks:</b></p>
    <ul>
    <li> sample_config.json and sample_config.xml are examples of configuration
@@ -70,9 +70,8 @@ The chunk size can be adjusted easily via configuration file.</li>
    </ul>
      
 <p><b>4.</b> Run the script from a terminal.<br /> 
-   &nbsp;&nbsp;&nbsp;&nbsp;<b>Sample:</b> &nbsp;
-   php &nbsp;  /path/to/FromMySqlToPostgreSql/index.php 
-       &nbsp;  /path/to/FromMySqlToPostgreSql/config[.xml | .json]</p>
+   &nbsp;&nbsp;&nbsp;&nbsp;<b>Sample:</b> <code>
+   php /path/to/FromMySqlToPostgreSql/index.php /path/to/FromMySqlToPostgreSql/config[.xml | .json]</code></p>
        
 <p><b>5.</b> At the end of migration check log files, if necessary.<br />&nbsp;&nbsp;&nbsp;
    Log files will be located in "logs_directory" folder in the root of the package.<br />&nbsp;&nbsp;&nbsp;
