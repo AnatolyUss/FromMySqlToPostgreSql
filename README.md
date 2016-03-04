@@ -4,14 +4,14 @@
 <p>FromMySqlToPostgreSql is a tool, intended to make a process of migration 
 from MySql to PostgreSql as easy and smooth as possible.</p>
 
-<!--
-<p><b>Important update!</b><br />
+
+<!--p><b>Important update!</b><br />
 Recently I've developed <a href="https://github.com/AnatolyUss/nmig">NMIG</a>, a database migration app, written in Node.js, and highly inspired by FromMySqlToPostgreSql.<br />
 <a href="https://github.com/AnatolyUss/nmig">NMIG</a> has a few important functional enhancements.<br />
 Due to Node.js asynchronous nature, <a href="https://github.com/AnatolyUss/nmig">NMIG</a> executes a part of its tasks in parallel, what makes it up to 3 times faster than FromMySqlToPostgreSql. Visit <a href="https://github.com/AnatolyUss/nmig">https://github.com/AnatolyUss/nmig</a>.<br />
 However, if you're not into Node.js, you can still use old and proven FromMySqlToPostgreSql.
-</p>
--->
+</p-->
+
 
 <h3>KEY FEATURES</h3>
 <ul>
