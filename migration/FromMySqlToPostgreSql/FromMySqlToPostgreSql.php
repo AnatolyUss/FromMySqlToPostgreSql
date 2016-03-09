@@ -572,6 +572,9 @@ class FromMySqlToPostgreSql
     private function sanitizeValue($strValue)
     {
         switch ($strValue) {
+            case '':
+                return "''";
+            
             case '0':
                 return '0';
 
@@ -791,7 +794,7 @@ class FromMySqlToPostgreSql
 
                 unset($arrRow, $arrSanitizedCsvData, $boolValidCsvEntity);
             }
-            
+
             // Copy current chunk into database.
             $sql       = "COPY \"" . $this->strSchema . "\".\"" . $strTableName . "\" FROM '" . $strAddrCsv . "' DELIMITER ',' CSV;";
             $stmt      = $this->pgsql->query($sql);
