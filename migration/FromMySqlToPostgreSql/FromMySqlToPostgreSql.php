@@ -1536,6 +1536,71 @@ class FromMySqlToPostgreSql
     }
 
     /**
+     * Create tables with the basic structure (column names and data types).
+     * Populate tables.
+     *
+     * @return bool
+     */
+    private function createAndPopulateTables()
+    {
+        foreach ($this->arrTablesToMigrate as $arrTable) {
+            $floatStartCopy = microtime(true);
+            $intRecords     = 0;
+
+            if (!$this->createTable($arrTable['Tables_in_' . $this->strMySqlDbName])) {
+                return false;
+            } else {
+                $intRecords = $this->populateTable($arrTable['Tables_in_' . $this->strMySqlDbName]);
+            }
+
+            $floatEndCopy             = microtime(true);
+            $this->arrSummaryReport[] = [
+                $this->strSchema . '.' . $arrTable['Tables_in_' . $this->strMySqlDbName],
+                $intRecords,
+                round(($floatEndCopy - $floatStartCopy), 3) . ' seconds',
+            ];
+
+            unset($arrTable, $floatStartCopy, $floatEndCopy, $intRecords);
+        }
+
+        return true;
+    }
+
+    /**
+     * Set table constraints.
+     */
+    private function createConstraints()
+    {
+        foreach ($this->arrTablesToMigrate as $arrTable) {
+            $this->setTableConstraints($arrTable['Tables_in_' . $this->strMySqlDbName]);
+            unset($arrTable);
+        }
+    }
+
+    /**
+     * Set foreign key constraints, then run "vacuum full" and "ANALYZE" for each table.
+     */
+    private function createForeignKeysAndRunVacuumFullAndAnalyze()
+    {
+        foreach ($this->arrTablesToMigrate as $arrTable) {
+            $this->processForeignKey($arrTable['Tables_in_' . $this->strMySqlDbName]);
+            $this->runVacuumFullAndAnalyze($arrTable['Tables_in_' . $this->strMySqlDbName]);
+            unset($arrTable);
+        }
+    }
+
+    /**
+     * Attempt to create views.
+     */
+    private function createViews()
+    {
+        foreach ($this->arrViewsToMigrate as $arrView) {
+            $this->createView($arrView['Tables_in_' . $this->strMySqlDbName]);
+            unset($arrView);
+        }
+    }
+
+    /**
      * Performs migration from source database to destination database.
      *
      * @param  void
@@ -1570,55 +1635,14 @@ class FromMySqlToPostgreSql
             $this->log('-- ' . $intTablesCnt . ($intTablesCnt === 1 ? ' table ' : ' tables ') . 'detected' . PHP_EOL);
         }
 
-        /*
-         * Create tables with the basic structure (column names and data types).
-         * Populate tables.
-         */
-        foreach ($this->arrTablesToMigrate as $arrTable) {
-            $floatStartCopy = microtime(true);
-            $intRecords     = 0;
-
-            if (!$this->createTable($arrTable['Tables_in_' . $this->strMySqlDbName])) {
-                $this->log('-- Script is terminated.' . PHP_EOL);
-                exit;
-            } else {
-                $intRecords = $this->populateTable($arrTable['Tables_in_' . $this->strMySqlDbName]);
-            }
-
-            $floatEndCopy             = microtime(true);
-            $this->arrSummaryReport[] = [
-                $this->strSchema . '.' . $arrTable['Tables_in_' . $this->strMySqlDbName],
-                $intRecords,
-                round(($floatEndCopy - $floatStartCopy), 3) . ' seconds',
-            ];
-
-            unset($arrTable, $floatStartCopy, $floatEndCopy, $intRecords);
+        if (!$this->createAndPopulateTables()) {
+            $this->log('-- Script is terminated.' . PHP_EOL);
+            exit;
         }
 
-        /*
-         * Set table constraints.
-         */
-        foreach ($this->arrTablesToMigrate as $arrTable) {
-            $this->setTableConstraints($arrTable['Tables_in_' . $this->strMySqlDbName]);
-            unset($arrTable);
-        }
-
-        /*
-         * Set foreign key constraints, then run "vacuum full" and "ANALYZE" for each table.
-         */
-        foreach ($this->arrTablesToMigrate as $arrTable) {
-            $this->processForeignKey($arrTable['Tables_in_' . $this->strMySqlDbName]);
-            $this->runVacuumFullAndAnalyze($arrTable['Tables_in_' . $this->strMySqlDbName]);
-            unset($arrTable);
-        }
-
-        /*
-         * Attempt to create views.
-         */
-        foreach ($this->arrViewsToMigrate as $arrView) {
-            $this->createView($arrView['Tables_in_' . $this->strMySqlDbName]);
-            unset($arrView);
-        }
+        $this->createConstraints();
+        $this->createForeignKeysAndRunVacuumFullAndAnalyze();
+        $this->createViews();
 
         /*
          * Remove the temporary directory.
