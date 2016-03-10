@@ -19,7 +19,7 @@ However, if you're not into Node.js, you can still use old and proven FromMySqlT
    
 <li> Accuracy of migration the database structure - FromMySqlToPostgreSql converts 
    MySql data types to corresponding PostgreSql data types, creates constraints,
-   indeces, primary and foreign keys exactly as they were before migration.</li>
+   indexes, primary and foreign keys exactly as they were before migration.</li>
 
 <li>Ability to migrate big databases - in order to reduce RAM consumption <br/> 
 FromMySqlToPostgreSql will split each table's data into several chunks. <br />
@@ -90,7 +90,7 @@ The chunk size can be adjusted easily via configuration file.</li>
 <h3>TEST</h3>
 <p>Tested using MySql Community Server (5.6.21) and PostgreSql (9.3).<br />
 The entire process of migration 59.6 MB database (49 tables, 570750 rows),<br /> 
-which includes data types mapping, creation of tables, constraints, indeces, <br />
+which includes data types mapping, creation of tables, constraints, indexes, <br />
 PKs, FKs, migration of data, garbage-collection and analyzing the newly created <br />
 PostgreSql database took 3 minutes 6 seconds.</p>
 <p>Tested using MySql Community Server (5.6.21) and PostgreSql (9.4).<br />
