@@ -34,8 +34,11 @@ The chunk size can be adjusted easily via configuration file.</li>
    about every step, it takes during the execution.</li>
 <li>
  Ease of configuration - all the parameters required for migration 
- (5 parameters) should be put in one single file, 
+ should be put in one single file, 
  which can be in either "xml" or "json" format.</li>
+<li>
+   Ability to transfer only data.
+</li>
 </ul>
 
 <h3>SYSTEM REQUIREMENTS</h3>

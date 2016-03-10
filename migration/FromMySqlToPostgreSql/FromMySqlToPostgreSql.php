@@ -159,6 +159,13 @@ class FromMySqlToPostgreSql
     private $floatDataChunkSize;
 
     /**
+     * Flag, indicating that only data should migrate
+     *
+     * @var bool
+     */
+    private $isDataOnly;
+
+    /**
      * Extract database name from given query-string.
      *
      * @param  string $strConString
@@ -223,6 +230,7 @@ class FromMySqlToPostgreSql
         $this->pgsql                       = null;
         $this->strMySqlDbName              = $this->extractDbName($this->strSourceConString);
         $this->strSchema                   = isset($arrConfig['schema']) ? $arrConfig['schema'] : '';
+        $this->isDataOnly                  = isset($arrConfig['data_only']) ? (bool)$arrConfig['data_only'] : false;
 
         if (!file_exists($this->strTemporaryDirectory)) {
             mkdir($this->strTemporaryDirectory);
@@ -1547,7 +1555,8 @@ class FromMySqlToPostgreSql
             $floatStartCopy = microtime(true);
             $intRecords     = 0;
 
-            if (!$this->createTable($arrTable['Tables_in_' . $this->strMySqlDbName])) {
+            if (!$this->isDataOnly
+                && !$this->createTable($arrTable['Tables_in_' . $this->strMySqlDbName])) {
                 return false;
             } else {
                 $intRecords = $this->populateTable($arrTable['Tables_in_' . $this->strMySqlDbName]);
@@ -1612,7 +1621,9 @@ class FromMySqlToPostgreSql
         $this->log(
             PHP_EOL . "\t" . '"FromMySqlToPostgreSql" - the database migration tool' .
             PHP_EOL . "\tCopyright 2015  Anatoly Khaytovich <anatolyuss@gmail.com>" .
-            PHP_EOL . "\t-- Migration began..." . PHP_EOL
+            PHP_EOL . "\t-- Migration began..." .
+            ($this->isDataOnly ? PHP_EOL . "\t-- Only data will migrate." : '') .
+            PHP_EOL
         );
 
         ini_set('memory_limit', '-1');
@@ -1640,9 +1651,11 @@ class FromMySqlToPostgreSql
             exit;
         }
 
-        $this->createConstraints();
-        $this->createForeignKeysAndRunVacuumFullAndAnalyze();
-        $this->createViews();
+        if (!$this->isDataOnly) {
+            $this->createConstraints();
+            $this->createForeignKeysAndRunVacuumFullAndAnalyze();
+            $this->createViews();
+        }
 
         /*
          * Remove the temporary directory.
