@@ -230,7 +230,7 @@ class FromMySqlToPostgreSql
         $this->pgsql                       = null;
         $this->strMySqlDbName              = $this->extractDbName($this->strSourceConString);
         $this->strSchema                   = isset($arrConfig['schema']) ? $arrConfig['schema'] : '';
-        $this->isDataOnly                  = isset($arrConfig['data_only']) ? (bool)$arrConfig['data_only'] : false;
+        $this->isDataOnly                  = isset($arrConfig['data_only']) ? (bool) $arrConfig['data_only'] : false;
 
         if (!file_exists($this->strTemporaryDirectory)) {
             mkdir($this->strTemporaryDirectory);
@@ -582,7 +582,7 @@ class FromMySqlToPostgreSql
         switch ($strValue) {
             /*case '':
                 return "''";*/
-            
+
             case '0':
                 return '0';
 
@@ -1563,9 +1563,11 @@ class FromMySqlToPostgreSql
         foreach ($this->arrTablesToMigrate as $arrTable) {
             $floatStartCopy = microtime(true);
             $intRecords     = 0;
-
-            if (!$this->isDataOnly
-                && !$this->createTable($arrTable['Tables_in_' . $this->strMySqlDbName])) {
+            
+            if (
+                !$this->isDataOnly
+                && !$this->createTable($arrTable['Tables_in_' . $this->strMySqlDbName])
+            ) {
                 return false;
             } else {
                 $intRecords = $this->populateTable($arrTable['Tables_in_' . $this->strMySqlDbName]);
