@@ -31,5 +31,9 @@
         If not supplied, then 10 MB will be used as a default.
     -->
     <data_chunk_size>10</data_chunk_size>
-</root>
 
+    <!--
+        Flag allows to migrate only the data.
+    -->
+    <data_only>0</data_only>
+</root>
