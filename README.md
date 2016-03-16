@@ -37,7 +37,7 @@ The chunk size can be adjusted easily via configuration file.</li>
  should be put in one single file, 
  which can be in either "xml" or "json" format.</li>
 <li>
-   Ability to transfer only data.
+   Ability to transfer only a data (in case of an existing database).
 </li>
 </ul>
 
