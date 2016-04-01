@@ -159,6 +159,12 @@ class FromMySqlToPostgreSql
     private $floatDataChunkSize;
 
     /**
+     * Which tables or views will this migrate take on. If empty, means all tables and views will be migrate.
+     *
+     * @var mixed
+     */
+    private $source_objects;
+
      * Flag, indicating that only data should migrate
      *
      * @var bool
@@ -231,6 +237,7 @@ class FromMySqlToPostgreSql
         $this->strMySqlDbName              = $this->extractDbName($this->strSourceConString);
         $this->strSchema                   = isset($arrConfig['schema']) ? $arrConfig['schema'] : '';
         $this->isDataOnly                  = isset($arrConfig['data_only']) ? (bool) $arrConfig['data_only'] : false;
+        $this->source_objects              = isset($arrConfig['source_objects']) ? $arrConfig['source_objects'] : [];
 
         if (!file_exists($this->strTemporaryDirectory)) {
             mkdir($this->strTemporaryDirectory);
@@ -384,11 +391,14 @@ class FromMySqlToPostgreSql
             $arrResult = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
             foreach ($arrResult as $arrRow) {
-                if ('BASE TABLE' == $arrRow['Table_type']) {
-                    $this->arrTablesToMigrate[] = $arrRow;
-                } elseif ('VIEW' == $arrRow['Table_type']) {
-                    $this->arrViewsToMigrate[] = $arrRow;
-                }
+         		if (empty($this->source_objects) || (is_array($this->source_objects) && in_array($arrRow['Tables_in_' . $this->strMySqlDbName], $this->source_objects))) {
+        		    if ('BASE TABLE' == $arrRow['Table_type']) {
+                                $this->arrTablesToMigrate[] = $arrRow;
+                            } elseif ('VIEW' == $arrRow['Table_type']) {
+                                $this->arrViewsToMigrate[] = $arrRow;
+                            }
+        		}
+
                 unset($arrRow);
             }
 
@@ -1563,7 +1573,7 @@ class FromMySqlToPostgreSql
         foreach ($this->arrTablesToMigrate as $arrTable) {
             $floatStartCopy = microtime(true);
             $intRecords     = 0;
-            
+
             if (
                 !$this->isDataOnly
                 && !$this->createTable($arrTable['Tables_in_' . $this->strMySqlDbName])
