@@ -29,5 +29,12 @@
         "During migration each table's data will be split into chunks of data_chunk_size (in MB).",
         "If not supplied, then 10 MB will be used as a default."
     ],
-    "data_chunk_size" : 10
+    "data_chunk_size" : 10,
+
+    "data_only_description" : [
+        "Flag, that allows to migrate only the data.",
+        "By default, ti is 0 - entire db-structure + data",
+        "In order to migrate data only - set 1"
+    ],
+    "data_only" : 0
 }

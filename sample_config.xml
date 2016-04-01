@@ -13,7 +13,7 @@
         If empty, all tables and views will be migrated.
     -->
     <source_objects>table1,table2</source_objects>
-    
+
     <!--
         <target> - a connection string to your PostgreSql database.
         Please ensure, that you have defined your connection string properly.
@@ -38,4 +38,11 @@
         If not supplied, then 10 MB will be used as a default.
     -->
     <data_chunk_size>10</data_chunk_size>
+
+    <!--
+        Flag, that allows to migrate only the data.
+        By default, ti is 0 - entire db-structure + data
+        In order to migrate data only - set 1
+    -->
+    <data_only>0</data_only>
 </root>
