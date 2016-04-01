@@ -94,7 +94,9 @@ if (empty($arrConfig)) {
     
     $arrConfig['temp_dir_path'] = __DIR__ . '/temporary_directory';
     $arrConfig['logs_dir_path'] = __DIR__ . '/logs_directory';
-    
+    if (!empty(@trim($arrConfig['source_objects']))) {
+        $arrConfig['source_objects'] = explode(',', trim($arrConfig['source_objects']));
+    }
     $migration = new \FromMySqlToPostgreSql($arrConfig);
     $migration->migrate();
 }

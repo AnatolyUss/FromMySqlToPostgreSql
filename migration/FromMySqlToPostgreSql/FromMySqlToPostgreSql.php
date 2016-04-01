@@ -159,6 +159,13 @@ class FromMySqlToPostgreSql
     private $floatDataChunkSize;
 
     /**
+     * Which tables or views will this migrate take on. If empty, means all tables and views will be migrate.
+     *
+     * @var mixed
+     */
+    private $source_objects;
+
+    /**
      * Extract database name from given query-string.
      *
      * @param  string $strConString
@@ -223,6 +230,7 @@ class FromMySqlToPostgreSql
         $this->pgsql                       = null;
         $this->strMySqlDbName              = $this->extractDbName($this->strSourceConString);
         $this->strSchema                   = isset($arrConfig['schema']) ? $arrConfig['schema'] : '';
+        $this->source_objects              = isset($arrConfig['source_objects']) ? $arrConfig['source_objects'] : [];
 
         if (!file_exists($this->strTemporaryDirectory)) {
             mkdir($this->strTemporaryDirectory);
@@ -376,11 +384,14 @@ class FromMySqlToPostgreSql
             $arrResult = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
             foreach ($arrResult as $arrRow) {
-                if ('BASE TABLE' == $arrRow['Table_type']) {
-                    $this->arrTablesToMigrate[] = $arrRow;
-                } elseif ('VIEW' == $arrRow['Table_type']) {
-                    $this->arrViewsToMigrate[] = $arrRow;
-                }
+         		if (empty($this->source_objects) || (is_array($this->source_objects) && in_array($arrRow['Tables_in_' . $this->strMySqlDbName], $this->source_objects))) {
+        		    if ('BASE TABLE' == $arrRow['Table_type']) {
+                                $this->arrTablesToMigrate[] = $arrRow;
+                            } elseif ('VIEW' == $arrRow['Table_type']) {
+                                $this->arrViewsToMigrate[] = $arrRow;
+                            }
+        		}
+
                 unset($arrRow);
             }
 
@@ -1239,7 +1250,7 @@ class FromMySqlToPostgreSql
 
                     unset($strColumnName);
                 }
-                
+
                 $stmt = $this->pgsql->query($sql);
 
                 if (false === $stmt) {
