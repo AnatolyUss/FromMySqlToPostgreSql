@@ -27,8 +27,7 @@ The chunk size can be adjusted easily via configuration file.</li>
 
 <li> Speed of data transfer - in order to migrate data fast <br />
    FromMySqlToPostgreSql uses PostgreSQL COPY protocol.<br />
-   Note: migration of tables, containing "varbinary" or "blob" columns may be 
-   considerably slower.</li>
+</li>
 
 <li>Ease of monitoring - FromMySqlToPostgreSql will provide detailed output
    about every step, it takes during the execution.</li>
