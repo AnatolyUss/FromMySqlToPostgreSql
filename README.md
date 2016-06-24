@@ -85,7 +85,7 @@ The chunk size can be adjusted easily via configuration file.</li>
    <a href="mailto:anatolyuss@gmail.com?subject=FromMySqlToPostgreSql">anatolyuss@gmail.com</a></p>
 
 <h3>VERSION</h3>
-<p>Current version is 1.4.0<br />
+<p>Current version is 1.4.2<br />
 (major version . improvements . bug fixes)</p>
 
 
