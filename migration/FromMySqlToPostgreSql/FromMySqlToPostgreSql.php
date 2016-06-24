@@ -544,7 +544,7 @@ class FromMySqlToPostgreSql
             $this->log(PHP_EOL . '-- Currently processing table: ' . $strTableName . '...' . PHP_EOL);
             $this->connect();
 
-            $sql        = 'SHOW COLUMNS FROM `' . $strTableName . '`;';
+            $sql        = 'SHOW FULL COLUMNS FROM `' . $strTableName . '`;';
             $stmt       = $this->mysql->query($sql);
             $arrColumns = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             unset($sql, $stmt);
@@ -569,36 +569,6 @@ class FromMySqlToPostgreSql
             unset($strMsg);
         }
         return $boolRetVal;
-    }
-
-    /**
-     * Sanitize an input value.
-     *
-     * @param  string $strValue
-     * @return string
-     */
-    private function sanitizeValue($strValue)
-    {
-        switch ($strValue) {
-            /*case '':
-                return "''";*/
-
-            case '0':
-                return '0';
-
-            case '0000-00-00':
-            case '0000-00-00 00:00:00':
-                return '-INFINITY';
-
-            case chr(0):
-                return '0';
-
-            case chr(1):
-                return '1';
-
-            default:
-                return $strValue;
-        }
     }
 
     /**
@@ -772,30 +742,27 @@ class FromMySqlToPostgreSql
             unset($sql, $stmt);
 
             /*
-             * Sanitize data and insert it into temporary csv file.
+             * Ensure correctness of encoding and insert data into temporary csv file.
              */
             foreach ($arrRows as $arrRow) {
                 $boolValidCsvEntity  = true;
                 $arrSanitizedCsvData = [];
 
                 foreach ($arrRow as $value) {
-                    $strSanitizedValue = $this->sanitizeValue($value);
-
-                    if (mb_check_encoding($strSanitizedValue, $this->strEncoding)) {
-                        $arrSanitizedCsvData[] = $strSanitizedValue;
+                    if (mb_check_encoding($value, $this->strEncoding)) {
+                        $arrSanitizedCsvData[] = $value;
                     } else {
-                        $strSanitizedValue = mb_convert_encoding($strSanitizedValue, $this->strEncoding);
+                        $value = mb_convert_encoding($value, $this->strEncoding);
 
-                        if (mb_check_encoding($strSanitizedValue, $this->strEncoding)) {
-                            $arrSanitizedCsvData[] = $strSanitizedValue;
+                        if (mb_check_encoding($value, $this->strEncoding)) {
+                            $arrSanitizedCsvData[] = $value;
                         } else {
                             $boolValidCsvEntity = false;
                         }
                     }
-
-                    unset($value, $strSanitizedValue);
+                    unset($value);
                 }
-
+                
                 if ($boolValidCsvEntity) {
                     fputcsv($resourceCsv, $arrSanitizedCsvData);
                 }
@@ -840,6 +807,48 @@ class FromMySqlToPostgreSql
     }
 
     /**
+     * Arranges columns data before loading.
+     *
+     * @param  array $arrColumns
+     * @return string
+     */
+    private function arrangeColumnsData(array $arrColumns)
+    {
+        $strRetVal = '';
+
+        foreach ($arrColumns as $arrColumn) {
+            if (
+                stripos($arrColumn['Type'], 'geometry') !== false
+                || stripos($arrColumn['Type'], 'point') !== false
+                || stripos($arrColumn['Type'], 'linestring') !== false
+                || stripos($arrColumn['Type'], 'polygon') !== false
+            ) {
+                $strRetVal .= 'HEX(ST_AsWKB(`' . $arrColumn['Field'] . '`)),';
+            } elseif (
+                stripos($arrColumn['Type'], 'blob') !== false
+                || stripos($arrColumn['Type'], 'binary') !== false
+            ) {
+                $strRetVal .= 'HEX(`' . $arrColumn['Field'] . '`),';
+            } elseif (
+                stripos($arrColumn['Type'], 'bit') !== false
+            ) {
+                $strRetVal .= 'BIN(`' . $arrColumn['Field'] . '`),';
+            } elseif (
+                stripos($arrColumn['Type'], 'timestamp') !== false
+                || stripos($arrColumn['Type'], 'date') !== false
+            ) {
+                $strRetVal .= 'IF(`' . $arrColumn['Field']
+                           .  '` IN(\'0000-00-00\', \'0000-00-00 00:00:00\'), \'-INFINITY\', `'
+                           .  $arrColumn['Field'] . '`),';
+            } else {
+                $strRetVal .= '`' . $arrColumn['Field'] . '`,';
+            }
+        }
+
+        return substr($strRetVal, 0, -1);
+    }
+
+    /**
      * Populate current table.
      *
      * @param  string $strTableName
@@ -876,22 +885,11 @@ class FromMySqlToPostgreSql
             unset($sql, $stmt, $arrRows);
 
             // Build field list for SELECT from MySQL and apply optional casting or function based on field type.
-            $strSelectFieldList = '';
-            $sql                = 'SHOW COLUMNS FROM `' . $strTableName . '`;';
+            $sql                = 'SHOW FULL COLUMNS FROM `' . $strTableName . '`;';
             $stmt               = $this->mysql->query($sql);
             $arrColumns         = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            unset($sql, $stmt);
-
-            foreach ($arrColumns as $arrColumn) {
-                // Apply hex(ST_AsWKB(...)) due to issue in https://bugs.mysql.com/bug.php?id=69798
-                $strSelectFieldList .= $arrColumn['Type'] === 'geometry'
-                                       ? 'hex(ST_AsWKB(`' . $arrColumn['Field'] . '`)),'
-                                       : '`' . $arrColumn['Field'] . '`,';
-
-            	  unset($arrColumn);
-            }
-
-            $strSelectFieldList = substr($strSelectFieldList, 0, -1);
+            $strSelectFieldList = $this->arrangeColumnsData($arrColumns);
+            unset($sql, $stmt, $arrColumns);
             // End field list for SELECT from MySQL.
 
             $this->log(
@@ -957,6 +955,41 @@ class FromMySqlToPostgreSql
         }
 
         $this->log("\t-- Done." . PHP_EOL);
+    }
+
+    /**
+     * Create comments.
+     *
+     * @param  string $strTableName
+     * @param  array  $arrColumns
+     * @return void
+     */
+    private function processComment($strTableName, array $arrColumns)
+    {
+        $sql = '';
+
+        foreach ($arrColumns as $arrColumn) {
+            if (!isset($arrColumn['Comment'])) {
+                continue;
+            }
+
+            try {
+                $this->connect();
+                $sql = 'COMMENT ON COLUMN "' . $this->strSchema . '"."' . $strTableName . '"."'
+                     . $arrColumn['Field'] . '" IS \'' . $arrColumn['Comment'] . '\';';
+
+                 $stmt = $this->pgsql->query($sql);
+
+                 if ($stmt === false) {
+                     $this->log("\t" . '-- Cannot create comment on column "' . $arrColumn['Field'] . '"...' . PHP_EOL);
+                 } else {
+                     $this->log("\t" . '-- Comment on column "' . $arrColumn['Field'] . '" has set...' . PHP_EOL);
+                 }
+
+            } catch (\PDOException $e) {
+                $this->generateError($e, __METHOD__ . PHP_EOL, $sql);
+            }
+        }
     }
 
     /**
@@ -1453,7 +1486,7 @@ class FromMySqlToPostgreSql
 
         try {
             $this->connect();
-            $sql        = 'SHOW COLUMNS FROM `' . $strTableName . '`;';
+            $sql        = 'SHOW FULL COLUMNS FROM `' . $strTableName . '`;';
             $stmt       = $this->mysql->query($sql);
             $arrColumns = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             unset($sql, $stmt);
@@ -1472,6 +1505,7 @@ class FromMySqlToPostgreSql
         $this->processDefault($strTableName, $arrColumns);
         $this->createSequence($strTableName, $arrColumns);
         $this->processIndexAndKey($strTableName, $arrColumns);
+        $this->processComment($strTableName, $arrColumns);
         $this->log(
             "\t" . '-- Constraints for "' . $this->strSchema . '"."' . $strTableName
             . '" were set successfully...' . PHP_EOL
@@ -1563,7 +1597,7 @@ class FromMySqlToPostgreSql
         foreach ($this->arrTablesToMigrate as $arrTable) {
             $floatStartCopy = microtime(true);
             $intRecords     = 0;
-            
+
             if (
                 !$this->isDataOnly
                 && !$this->createTable($arrTable['Tables_in_' . $this->strMySqlDbName])
