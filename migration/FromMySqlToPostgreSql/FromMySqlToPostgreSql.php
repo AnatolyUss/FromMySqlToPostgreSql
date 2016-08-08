@@ -572,7 +572,7 @@ class FromMySqlToPostgreSql
     }
 
     /**
-     * Populates given table using "prepared statments" (worker).
+     * Populates given table using "prepared statements" (worker).
      *
      * @param  array   $arrRows
      * @param  string  $strTableName
@@ -634,7 +634,6 @@ class FromMySqlToPostgreSql
                         $stmtInsert->bindValue(':' . $intColumnIndex, $value, \PDO::PARAM_LOB);
                     } else {
                         $strFiltered = $value;
-                        $strFiltered = str_replace("'", "''", $strFiltered);
 
                         if (mb_check_encoding($strFiltered, $this->strEncoding)) {
                             $stmtInsert->bindValue(':' . $intColumnIndex, $strFiltered, \PDO::PARAM_STR);
