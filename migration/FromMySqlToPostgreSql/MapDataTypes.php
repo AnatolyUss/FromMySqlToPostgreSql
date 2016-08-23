@@ -47,7 +47,7 @@ class MapDataTypes
             'type'                     => 'bit varying',
             'mySqlVarLenPgSqlFixedLen' => false,
         ],
-        
+
         'year' => [
             'increased_size'           => 'int',
             'type'                     => 'smallint',
@@ -186,6 +186,12 @@ class MapDataTypes
             'mySqlVarLenPgSqlFixedLen' => false,
         ],
 
+        'set' => [
+            'increased_size'           => '',
+            'type'                     => 'character varying(255)',
+            'mySqlVarLenPgSqlFixedLen' => false,
+        ],
+
         'tinytext' => [
             'increased_size'           => '',
             'type'                     => 'text',
@@ -275,7 +281,7 @@ class MapDataTypes
             $arrDataType               = explode('(', $strMySqlDataType);
             $strDataType               = strtolower($arrDataType[0]);
 
-            if ('enum' == $strDataType) {
+            if ('enum' == $strDataType || 'set' == $strDataType) {
                 $strRetVal = 'varchar(255)';
             } elseif ('decimal' == $strDataType || 'numeric' == $strDataType) {
                 $strRetVal = self::$arrMySqlPgSqlTypesMap[$strDataType]['type'] . '(' . $arrDataType[1];
