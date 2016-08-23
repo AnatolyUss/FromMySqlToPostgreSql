@@ -572,141 +572,6 @@ class FromMySqlToPostgreSql
     }
 
     /**
-     * Populates given table using "prepared statments" (worker).
-     *
-     * @param  array   $arrRows
-     * @param  string  $strTableName
-     * @param  int    &$intStartInsertionsFromIndex
-     * @param  int     $intRowsInserted
-     * @return int
-     */
-    private function populateTableByPrepStmtWorker(
-        array $arrRows,
-        $strTableName,
-        &$intStartInsertionsFromIndex,
-        $intRowsInserted
-    ) {
-        $strInsert = '';
-
-        try {
-            $this->connect();
-            $strColumns     = '(';
-            $strValues      = '(';
-            $strInsert      = 'INSERT INTO "' . $this->strSchema . '"."' . $strTableName . '" ';
-            $intColumnIndex = 0;
-
-            foreach ($arrRows[$intStartInsertionsFromIndex] as $strColumn => $value) {
-                $strColumns .= '"'  . $strColumn  . '",';
-                $strValues  .= ':' . $intColumnIndex  . ',';
-                $intColumnIndex++;
-                unset($strColumn, $value);
-            }
-            unset($intColumnIndex);
-
-            $strColumns      = substr($strColumns, 0, -1) . ') ';
-            $strValues       = substr($strValues, 0, -1)  . ');';
-            $strInsert      .= $strColumns . ' VALUES' . $strValues;
-            $stmtInsert      = $this->pgsql->prepare($strInsert);
-            $arrRowsPortion  = array_slice($arrRows, $intStartInsertionsFromIndex);
-
-            foreach ($arrRowsPortion as $arrRow) {
-                $intColumnIndex = 0;
-
-                foreach ($arrRow as $value) {
-                    switch ($value) {
-                        case '0':
-                            $value = '0';
-                            break;
-
-                        case '0000-00-00':
-                        case '0000-00-00 00:00:00':
-                            $value = '-INFINITY';
-                            break;
-                    }
-
-                    if (is_null($value)) {
-                        $stmtInsert->bindValue(':' . $intColumnIndex, $value, \PDO::PARAM_NULL);
-                    } elseif (is_bool($value)) {
-                        $stmtInsert->bindValue(':' . $intColumnIndex, $value, \PDO::PARAM_BOOL);
-                    } elseif (is_numeric($value)) {
-                        $stmtInsert->bindValue(':' . $intColumnIndex, $value, \PDO::PARAM_INT);
-                    } elseif (is_resource($value)) {
-                        $stmtInsert->bindValue(':' . $intColumnIndex, $value, \PDO::PARAM_LOB);
-                    } else {
-                        $strFiltered = $value;
-                        $strFiltered = str_replace("'", "''", $strFiltered);
-
-                        if (mb_check_encoding($strFiltered, $this->strEncoding)) {
-                            $stmtInsert->bindValue(':' . $intColumnIndex, $strFiltered, \PDO::PARAM_STR);
-                        } else {
-                            $strFiltered = mb_convert_encoding($strFiltered, $this->strEncoding);
-                            $stmtInsert->bindValue(':' . $intColumnIndex, $strFiltered, \PDO::PARAM_STR);
-
-                            if (!mb_check_encoding($strFiltered, $this->strEncoding)) {
-                                unset($strColumn, $value);
-                                continue;
-                            }
-                        }
-                    }
-
-                    unset($value);
-                    $intColumnIndex++;
-                }
-
-                $intStartInsertionsFromIndex++;
-
-                if ($stmtInsert->execute()) {
-                    $intRowsInserted++;
-                    echo "\t-- For now inserted: $intRowsInserted rows from current data chunk\r";
-                } else {
-                    return $intRowsInserted;
-                }
-                unset($arrRow, $intColumnIndex);
-            }
-
-            unset($stmtInsert, $strInsert, $strColumns, $strValues);
-
-        } catch (\PDOException $e) {
-            $intStartInsertionsFromIndex++;
-            $strMsg = __METHOD__ . PHP_EOL;
-            $this->generateError($e, $strMsg, $strInsert);
-            unset($strMsg);
-        }
-
-        return $intRowsInserted;
-    }
-
-    /**
-     * Populates given table using "prepared statments".
-     *
-     * @param  array  $arrRows
-     * @param  string $strTableName
-     * @param  int    $intStartInsertionsFromIndex
-     * @param  int    $intTotalRowsToInsert
-     * @param  int    $intRowsInserted
-     * @return int
-     */
-    private function populateTableByPrepStmt(
-        array $arrRows,
-        $strTableName,
-        $intStartInsertionsFromIndex = 0,
-        $intTotalRowsToInsert        = 0,
-        $intRowsInserted             = 0
-    ) {
-        while ($intStartInsertionsFromIndex < $intTotalRowsToInsert) {
-            $intRowsInserted = $this->populateTableByPrepStmtWorker(
-                $arrRows,
-                $strTableName,
-                $intStartInsertionsFromIndex,
-                $intRowsInserted
-            );
-        }
-
-        echo PHP_EOL;
-        return $intRowsInserted;
-    }
-
-    /**
      * Load a chunk of data using "PostgreSql COPY".
      *
      * @param  string $strTableName
@@ -728,6 +593,7 @@ class FromMySqlToPostgreSql
         $intRetVal   = 0;
         $arrRows     = [];
         $sql         = '';
+        $sqlCopy     = '';
         $strAddrCsv  = '';
         $resourceCsv = null;
 
@@ -739,7 +605,7 @@ class FromMySqlToPostgreSql
             $stmt           = $this->mysql->query($sql);
             $arrRows        = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $intRowsInChunk = count($arrRows); // An actual amount of records in current chunk.
-            unset($sql, $stmt);
+            unset($stmt);
 
             /*
              * Ensure correctness of encoding and insert data into temporary csv file.
@@ -762,7 +628,7 @@ class FromMySqlToPostgreSql
                     }
                     unset($value);
                 }
-                
+
                 if ($boolValidCsvEntity) {
                     fputcsv($resourceCsv, $arrSanitizedCsvData);
                 }
@@ -771,33 +637,23 @@ class FromMySqlToPostgreSql
             }
 
             // Copy current chunk into database.
-            $sql       = "COPY \"" . $this->strSchema . "\".\"" . $strTableName . "\" FROM '" . $strAddrCsv . "' DELIMITER ',' CSV;";
-            $stmt      = $this->pgsql->query($sql);
+            $sqlCopy   = "COPY \"" . $this->strSchema . "\".\"" . $strTableName . "\" FROM '" . $strAddrCsv . "' DELIMITER ',' CSV;";
+            $stmt      = $this->pgsql->query($sqlCopy);
             $intRetVal = count($stmt->fetchAll(\PDO::FETCH_ASSOC));
-            unset($sql, $stmt);
+            unset($stmt);
             $this->log(
                 "\t-- For now inserted: " . ($intForNowInserted + $intRetVal) . ' rows, '
                 . 'Total rows in "' . $this->strSchema . '"."' . $strTableName . '": ' . $intRowsCnt . PHP_EOL
             );
 
             if ($intRowsCnt != 0 && 0 == $intRetVal) {
-                /*
-                 * In most cases (~100%) the control will not get here.
-                 * Load current chunk using prepared statment.
-                 */
-                $intRetVal = $this->populateTableByPrepStmt($arrRows, $strTableName, 0, $intRowsInChunk, 0);
+                $this->log("\t--Following MySQL query will return a data set, rejected by PostgreSQL:\n" . $sql . "\n");
             }
 
         } catch (\PDOException $e) {
             $strMsg = __METHOD__ . PHP_EOL;
-            $this->generateError($e, $strMsg, $sql);
-            unset($strMsg, $sql);
-
-            /*
-             * If the control got here, then no (usable) rows were inserted.
-             * Load current chunk using prepared statment.
-             */
-            $intRetVal = $this->populateTableByPrepStmt($arrRows, $strTableName, 0, $intRowsInChunk, 0);
+            $this->generateError($e, $strMsg, $sql . PHP_EOL . $sqlCopy);
+            $this->log("\t--Following MySQL query will return a data set, rejected by PostgreSQL:\n" . $sql . "\n");
         }
 
         fclose($resourceCsv);
@@ -1723,7 +1579,5 @@ class FromMySqlToPostgreSql
             . ':' . ($intSeconds < 10 ? '0' . $intSeconds : $intSeconds)
             . ' (hours:minutes:seconds)' . PHP_EOL . PHP_EOL
         );
-
-        unset($intTimeBegin, $intTimeEnd, $intExecTime, $intHours, $intMinutes, $intSeconds);
     }
 }
