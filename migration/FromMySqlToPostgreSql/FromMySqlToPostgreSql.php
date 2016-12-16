@@ -712,7 +712,12 @@ class FromMySqlToPostgreSql
                 || stripos($arrColumn['Type'], 'linestring') !== false
                 || stripos($arrColumn['Type'], 'polygon') !== false
             ) {
-                $strRetVal .= 'HEX(ST_AsWKB(`' . $arrColumn['Field'] . '`)),';
+                if ( strcmp( '5.5', substr( $this->mysqlVersion, 0, 3 ) ) == 0
+                ) {
+                    $strRetVal .= 'HEX(AsWKB(`' . $arrColumn['Field'] . '`)),';
+                } else {
+                    $strRetVal .= 'HEX(ST_AsWKB(`' . $arrColumn['Field'] . '`)),';
+                }
             } elseif (
                 stripos($arrColumn['Type'], 'blob') !== false
                 || stripos($arrColumn['Type'], 'binary') !== false
