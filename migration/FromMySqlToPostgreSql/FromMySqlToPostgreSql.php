@@ -33,6 +33,13 @@ class FromMySqlToPostgreSql
     private $mysql;
 
     /**
+     * A String to hold database version.
+     *
+     * @var string
+     */
+    private $mysqlVersion;
+
+    /**
      * A \PDO instance, connected to PostgreSql server.
      *
      * @var \PDO
@@ -364,6 +371,32 @@ class FromMySqlToPostgreSql
             }
         }
         unset($strError);
+    }
+
+    /**
+     * Retrieve MySQL version
+     *
+     * @param  void
+     * @return bool
+     */
+    private function retrieveMySqlVersion()
+    {
+        $sql       = '';
+
+        try {
+            $this->connect();
+            $sql                = 'SELECT VERSION() AS mysql_version;';
+            $stmt               = $this->mysql->query($sql);
+            $arrRows            = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $this->mysqlVersion = $arrRows[0]['mysql_version'];
+            unset( $sql, $stmt, $arrResult );
+        } catch (\PDOException $e) {
+            $this->generateError(
+                $e,
+                __METHOD__ . PHP_EOL . "\t" . '-- Cannot retrieve version from source (MySql) database...',
+                $sql
+            );
+        }
     }
 
     /**
@@ -1526,6 +1559,9 @@ class FromMySqlToPostgreSql
             ($this->isDataOnly ? PHP_EOL . "\t-- Only data will migrate." : '') .
             PHP_EOL
         );
+
+	$this->retrieveMySqlVersion();
+	$this->log('-- Discovered MySQL Version "' . $this->mysqlVersion . '"' . PHP_EOL);
 
         ini_set('memory_limit', '-1');
 
