@@ -712,7 +712,7 @@ class FromMySqlToPostgreSql
                 || stripos($arrColumn['Type'], 'linestring') !== false
                 || stripos($arrColumn['Type'], 'polygon') !== false
             ) {
-                if ( strcmp( '5.5', substr( $this->mysqlVersion, 0, 3 ) ) == 0
+                if ( substr( $this->mysqlVersion, 0, 3 ) <= 5.5
                 ) {
                     $strRetVal .= 'HEX(AsWKB(`' . $arrColumn['Field'] . '`)),';
                 } else {
