@@ -42,6 +42,12 @@ class MapDataTypes
      * @var array
      */
     private static $arrMySqlPgSqlTypesMap = [
+        'json' => [
+            'increased_size'           => '',
+            'type'                     => 'json',
+            'mySqlVarLenPgSqlFixedLen' => false,
+        ],
+        
         'bit' => [
             'increased_size'           => 'bit varying',
             'type'                     => 'bit varying',
