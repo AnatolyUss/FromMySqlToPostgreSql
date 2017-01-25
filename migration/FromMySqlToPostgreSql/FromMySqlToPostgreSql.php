@@ -572,6 +572,21 @@ class FromMySqlToPostgreSql
     }
 
     /**
+     * Escape the given string for PostgreSQL's COPY text format.
+     *
+     * @param  string $value
+     * @return string
+     */
+    private function escapeValue($value)
+    {
+        return str_replace(
+            array(  "\\",  "\n",  "\r",  "\t"),
+            array("\\\\", "\\n", "\\r", "\\t"),
+            $value
+        );
+    }
+
+    /**
      * Load a chunk of data using "PostgreSql COPY".
      *
      * @param  string $strTableName
@@ -615,13 +630,15 @@ class FromMySqlToPostgreSql
                 $arrSanitizedCsvData = [];
 
                 foreach ($arrRow as $value) {
-                    if (mb_check_encoding($value, $this->strEncoding)) {
-                        $arrSanitizedCsvData[] = $value;
+                    if (is_null($value)) {
+                        $arrSanitizedCsvData[] = '\N';
+                    } else if (mb_check_encoding($value, $this->strEncoding)) {
+                        $arrSanitizedCsvData[] = $this->escapeValue($value);
                     } else {
                         $value = mb_convert_encoding($value, $this->strEncoding);
 
                         if (mb_check_encoding($value, $this->strEncoding)) {
-                            $arrSanitizedCsvData[] = $value;
+                            $arrSanitizedCsvData[] = $this->escapeValue($value);
                         } else {
                             $boolValidCsvEntity = false;
                         }
@@ -630,14 +647,14 @@ class FromMySqlToPostgreSql
                 }
 
                 if ($boolValidCsvEntity) {
-                    fputcsv($resourceCsv, $arrSanitizedCsvData);
+                    fwrite($resourceCsv, implode("\t", $arrSanitizedCsvData) . "\n");
                 }
 
                 unset($arrRow, $arrSanitizedCsvData, $boolValidCsvEntity);
             }
 
             // Copy current chunk into database.
-            $sqlCopy   = "COPY \"" . $this->strSchema . "\".\"" . $strTableName . "\" FROM '" . $strAddrCsv . "' DELIMITER ',' CSV;";
+            $sqlCopy   = "COPY \"" . $this->strSchema . "\".\"" . $strTableName . "\" FROM '" . $strAddrCsv . "' WITH (FORMAT text);";
             $stmt      = $this->pgsql->query($sqlCopy);
             $intRetVal = count($stmt->fetchAll(\PDO::FETCH_ASSOC));
             unset($stmt);
