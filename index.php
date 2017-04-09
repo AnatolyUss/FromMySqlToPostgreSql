@@ -80,6 +80,27 @@ function getConfig($strPath)
     return $arrRetVal;
 }
 
+// Verify the extensions are loaded before running.
+if (!extension_loaded('pgsql')) {
+    echo "Postgresql not enabled: you need the 'pgsql' module.\n";
+    exit(1);
+}
+if (!extension_loaded('pdo_mysql')) {
+    echo "Postgresql not enabled: you need the 'pdo_mysql' module.\n";
+    exit(1);
+}
+if (!extension_loaded('pdo_pgsql')) {
+    echo "Postgresql not enabled: you need the 'pdo_pgsql' module.\n";
+    exit(1);
+}
+if (!extension_loaded('mbstring')) {
+    echo "Multibyte extension not loaded: you need the 'mbstring' module.\n";
+    exit(1);
+}
+if (ini_get('register_argc_argv') == 0) {
+    echo "register_argc_argv is not turned on, we can't process command line arguments.\n";
+    exit(1);
+}
 
 $strParam  = isset($argv[1]) && !empty($argv[1]) ? $argv[1] : $_SERVER['argv'][1];
 $arrConfig = getConfig($strParam);
