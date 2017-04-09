@@ -40,6 +40,13 @@ class FromMySqlToPostgreSql
     private $pgsql;
 
     /**
+     * A \resource instance, connected to PostgreSql server for data loading via copy.
+     *
+     * @var \resource
+     */
+    private $pgsqldata;
+
+    /**
      * Encoding of target (PostgreSql) server.
      *
      * @var string
@@ -300,6 +307,14 @@ class FromMySqlToPostgreSql
             $this->pgsql  = new \PDO($arrDestInput[0], $arrDestInput[1], $arrDestInput[2]);
             $this->pgsql->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
             $this->pgsql->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            // These are poor man's replacements to avoid 2 connection strings at this point in time.
+            $datadsn = str_replace('pgsql:', '', $arrDestInput[0]);
+            $datadsn = str_replace(';', ' ', $datadsn);
+            $this->pgsqldata = pg_connect($datadsn." user=".$arrDestInput[1]." password=".$arrDestInput[2]);
+            if (!$this->pgsqldata) {
+                echo pg_last_error();
+                exit;
+            }
         }
     }
 
@@ -597,37 +612,34 @@ class FromMySqlToPostgreSql
      * @param  int    $intForNowInserted
      * @return int
      */
-    private function populateTableWorker(
+    private function populateTableData(
         $strTableName,
         $strSelectFieldList,
-        $intOffset,
         $intRowsInChunk,
         $intRowsCnt,
         $intForNowInserted
     ) {
         $intRetVal   = 0;
-        $arrRows     = [];
         $sql         = '';
         $sqlCopy     = '';
-        $strAddrCsv  = '';
-        $resourceCsv = null;
+        $copiedCount = 0;
+        $copyArray = array();
 
         try {
             $this->connect();
-            $strAddrCsv     = $this->strTemporaryDirectory . '/' . $strTableName . $intOffset . '.csv';
-            $resourceCsv    = fopen($strAddrCsv, 'w');
-            $sql            = 'SELECT ' . $strSelectFieldList . ' FROM `' . $strTableName . '` LIMIT ' . $intOffset . ', ' . $intRowsInChunk . ';';
-            $stmt           = $this->mysql->query($sql);
+            $sql            = 'SELECT ' . $strSelectFieldList . ' FROM `' . $strTableName . '`;';
+            $stmt           = $this->mysql->prepare($sql);
             $arrRows        = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $intRowsInChunk = count($arrRows); // An actual amount of records in current chunk.
-            unset($stmt);
+            $this->mysql->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+            $mysqlResult = $stmt->execute();
 
             /*
              * Ensure correctness of encoding and insert data into temporary csv file.
              */
-            foreach ($arrRows as $arrRow) {
+            while ($arrRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $boolValidCsvEntity  = true;
                 $arrSanitizedCsvData = [];
+                $copiedCount++;
 
                 foreach ($arrRow as $value) {
                     if (is_null($value)) {
@@ -647,24 +659,30 @@ class FromMySqlToPostgreSql
                 }
 
                 if ($boolValidCsvEntity) {
-                    fwrite($resourceCsv, implode("\t", $arrSanitizedCsvData) . "\n");
+                    $copyArray[] = implode("\t", $arrSanitizedCsvData) . "\n";
                 }
 
-                unset($arrRow, $arrSanitizedCsvData, $boolValidCsvEntity);
-            }
+                if ($copiedCount % $intRowsInChunk) {
+                    // Attempt copy, if it failes, do one at a time to ensure we find all the errors.
+                    // If the data is valid, we perform fast, otherwise we ensure correctness at the cost of speed.
 
-            // Copy current chunk into database.
-            $sqlCopy   = "COPY \"" . $this->strSchema . "\".\"" . $strTableName . "\" FROM '" . $strAddrCsv . "' WITH (FORMAT text);";
-            $stmt      = $this->pgsql->query($sqlCopy);
-            $intRetVal = count($stmt->fetchAll(\PDO::FETCH_ASSOC));
-            unset($stmt);
-            $this->log(
-                "\t-- For now inserted: " . ($intForNowInserted + $intRetVal) . ' rows, '
-                . 'Total rows in "' . $this->strSchema . '"."' . $strTableName . '": ' . $intRowsCnt . PHP_EOL
-            );
-
-            if ($intRowsCnt != 0 && 0 == $intRetVal) {
-                $this->log("\t--Following MySQL query will return a data set, rejected by PostgreSQL:\n" . $sql . "\n");
+                    if (!pg_copy_from($this->pgsqldata, "\"" . $this->strSchema . "\".\"" . $strTableName . "\"", $copyArray)) {
+                        // do each row, loging the failed ones.
+                        $this->log("\t--Following file contains rows rejected by PostgreSQL for table ".
+                                   "\"" . $this->strSchema . "\".\"" . $strTableName . "\"\n");
+                        foreach ($copyArray as $copyrow) {
+                            if (!pg_copy_from($this->pgsqldata, "\"" . $this->strSchema . "\".\"" . $strTableName . "\"", array($row))) {
+                                $this->log($row);
+                            } else {
+                                $intRetVal++;
+                            }
+                        }
+                        $this->log("-- End of failed rows --\n");
+                    } else {
+                        $intRetVal += $copiedCount;
+                    }
+                    $copiedCount = 0;
+                }
             }
 
         } catch (\PDOException $e) {
@@ -673,9 +691,6 @@ class FromMySqlToPostgreSql
             $this->log("\t--Following MySQL query will return a data set, rejected by PostgreSQL:\n" . $sql . "\n");
         }
 
-        fclose($resourceCsv);
-        unlink($strAddrCsv);
-        unset($resourceCsv, $strAddrCsv, $arrRows);
         return $intRetVal;
     }
 
@@ -770,16 +785,13 @@ class FromMySqlToPostgreSql
                 . $strTableName . '": ' . $intRowsCnt . PHP_EOL
             );
 
-            for ($intOffset = 0; $intOffset < $intRowsCnt; $intOffset += $intRowsInChunk) {
-                $intRetVal += $this->populateTableWorker(
-                    $strTableName,
-                    $strSelectFieldList,
-                    $intOffset,
-                    $intRowsInChunk,
-                    $intRowsCnt,
-                    $intRetVal
-                );
-            }
+            $this->populateTableData(
+                $strTableName,
+                $strSelectFieldList,
+                $intRowsInChunk,
+                $intRowsCnt,
+                $intRetVal
+            );
 
             unset($intRowsCnt, $floatChunksCnt, $intRowsInChunk);
 
