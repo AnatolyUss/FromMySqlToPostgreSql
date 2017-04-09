@@ -911,6 +911,9 @@ class FromMySqlToPostgreSql
 
                 if (isset($arrSqlReservedValues[$arrColumn['Default']])) {
                     $sql .= $arrSqlReservedValues[$arrColumn['Default']] . ';';
+                } else if (substr($arrColumn['Type'], 0, 3) === 'bit' && substr($arrColumn['Default'], 0, 2) === "b'") {
+                    // This is a defaultl for a bit column use PostgreSql syntax.
+                    $sql .= substr($arrColumn['Default'], 1) . "::bit;";
                 } else {
                     $sql .= is_numeric($arrColumn['Default'])
                           ? $arrColumn['Default'] . ';'
