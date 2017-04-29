@@ -40,6 +40,13 @@ class FromMySqlToPostgreSql
     private $pgsql;
 
     /**
+     * A \resource instance, connected to PostgreSql server for data loading via copy.
+     *
+     * @var \resource
+     */
+    private $pgsqldata;
+
+    /**
      * Encoding of target (PostgreSql) server.
      *
      * @var string
@@ -300,6 +307,15 @@ class FromMySqlToPostgreSql
             $this->pgsql  = new \PDO($arrDestInput[0], $arrDestInput[1], $arrDestInput[2]);
             $this->pgsql->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
             $this->pgsql->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            // These are poor man's replacements to avoid 2 connection strings at this point in time.
+            $datadsn = str_replace('pgsql:', '', $arrDestInput[0]);
+            $datadsn = str_replace(';', ' ', $datadsn);
+            $this->pgsqldata = pg_connect($datadsn." user=".$arrDestInput[1]." password=".$arrDestInput[2]);
+            if (!$this->pgsqldata) {
+                echo pg_last_error();
+                exit;
+            }
+            pg_query($this->pgsqldata, "SET synchronous_commit=off");
         }
     }
 
@@ -572,6 +588,52 @@ class FromMySqlToPostgreSql
     }
 
     /**
+     * Escape the given string for PostgreSQL's COPY text format.
+     *
+     * @param  string $value
+     * @return string
+     */
+    private function escapeValue($value)
+    {
+        return str_replace(
+            array(  "\\",  "\n",  "\r",  "\t"),
+            array("\\\\", "\\n", "\\r", "\\t"),
+            $value
+        );
+    }
+
+    /**
+     * Save a chunk of rows into PostgreSQL
+     *
+     * @param  string $strTableName
+     * @param  array  $copyArray
+     * @return int    Number of rows inserted.
+     */
+    private function copySaveRows($strTableName, $copyArray) {
+        $intRetVal = 0;
+        // Attempt copy, if it failes, do one at a time to ensure we find all the errors.
+        // If the data is valid, we perform fast, otherwise we ensure correctness at the cost of speed.
+
+        if (!@pg_copy_from($this->pgsqldata, "\"" . $this->strSchema . "\".\"" . $strTableName . "\"", $copyArray)) {
+            // do each row, loging the failed ones.
+            $this->log("\t-- The following contains rows rejected by PostgreSQL for table ".
+                        "\"" . $this->strSchema . "\".\"" . $strTableName . "\"\n");
+            foreach ($copyArray as $copyrow) {
+                if (!@pg_copy_from($this->pgsqldata, "\"" . $this->strSchema . "\".\"" . $strTableName . "\"", array($copyrow))) {
+                    $this->log($copyrow);
+                } else {
+                    $intRetVal++;
+                }
+            }
+            $this->log("-- End of failed rows --\n");
+        } else {
+            $intRetVal += count($copyArray);
+        }
+
+        return $intRetVal;
+    }
+
+    /**
      * Load a chunk of data using "PostgreSql COPY".
      *
      * @param  string $strTableName
@@ -579,49 +641,46 @@ class FromMySqlToPostgreSql
      * @param  int    $intOffset
      * @param  int    $intRowsInChunk
      * @param  int    $intRowsCnt
-     * @param  int    $intForNowInserted
      * @return int
      */
-    private function populateTableWorker(
+    private function populateTableData(
         $strTableName,
         $strSelectFieldList,
-        $intOffset,
         $intRowsInChunk,
-        $intRowsCnt,
-        $intForNowInserted
+        $intRowsCnt
     ) {
         $intRetVal   = 0;
-        $arrRows     = [];
         $sql         = '';
         $sqlCopy     = '';
-        $strAddrCsv  = '';
-        $resourceCsv = null;
+        $copiedCount = 0;
+        $copyArray = [];
 
         try {
             $this->connect();
-            $strAddrCsv     = $this->strTemporaryDirectory . '/' . $strTableName . $intOffset . '.csv';
-            $resourceCsv    = fopen($strAddrCsv, 'w');
-            $sql            = 'SELECT ' . $strSelectFieldList . ' FROM `' . $strTableName . '` LIMIT ' . $intOffset . ', ' . $intRowsInChunk . ';';
-            $stmt           = $this->mysql->query($sql);
+            $sql            = 'SELECT ' . $strSelectFieldList . ' FROM `' . $strTableName . '`;';
+            $stmt           = $this->mysql->prepare($sql);
             $arrRows        = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $intRowsInChunk = count($arrRows); // An actual amount of records in current chunk.
-            unset($stmt);
+            $this->mysql->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+            $mysqlResult = $stmt->execute();
 
             /*
              * Ensure correctness of encoding and insert data into temporary csv file.
              */
-            foreach ($arrRows as $arrRow) {
+            while ($arrRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $boolValidCsvEntity  = true;
                 $arrSanitizedCsvData = [];
+                $copiedCount++;
 
                 foreach ($arrRow as $value) {
-                    if (mb_check_encoding($value, $this->strEncoding)) {
-                        $arrSanitizedCsvData[] = $value;
+                    if (is_null($value)) {
+                        $arrSanitizedCsvData[] = '\N';
+                    } else if (mb_check_encoding($value, $this->strEncoding)) {
+                        $arrSanitizedCsvData[] = $this->escapeValue($value);
                     } else {
                         $value = mb_convert_encoding($value, $this->strEncoding);
 
                         if (mb_check_encoding($value, $this->strEncoding)) {
-                            $arrSanitizedCsvData[] = $value;
+                            $arrSanitizedCsvData[] = $this->escapeValue($value);
                         } else {
                             $boolValidCsvEntity = false;
                         }
@@ -630,25 +689,18 @@ class FromMySqlToPostgreSql
                 }
 
                 if ($boolValidCsvEntity) {
-                    fputcsv($resourceCsv, $arrSanitizedCsvData);
+                    $copyArray[] = implode("\t", $arrSanitizedCsvData) . "\n";
                 }
 
-                unset($arrRow, $arrSanitizedCsvData, $boolValidCsvEntity);
+                if (($copiedCount % $intRowsInChunk) == 0) {
+                    $intRetVal += $this->copySaveRows($strTableName, $copyArray);
+                    $copiedCount = 0;
+                    $copyArray = array();
+                }
             }
-
-            // Copy current chunk into database.
-            $sqlCopy   = "COPY \"" . $this->strSchema . "\".\"" . $strTableName . "\" FROM '" . $strAddrCsv . "' DELIMITER ',' CSV;";
-            $stmt      = $this->pgsql->query($sqlCopy);
-            $intRetVal = count($stmt->fetchAll(\PDO::FETCH_ASSOC));
-            unset($stmt);
-            $this->log(
-                "\t-- For now inserted: " . ($intForNowInserted + $intRetVal) . ' rows, '
-                . 'Total rows in "' . $this->strSchema . '"."' . $strTableName . '": ' . $intRowsCnt . PHP_EOL
-            );
-
-            if ($intRowsCnt != 0 && 0 == $intRetVal) {
-                $this->log("\t--Following MySQL query will return a data set, rejected by PostgreSQL:\n" . $sql . "\n");
-            }
+            $intRetVal += $this->copySaveRows($strTableName, $copyArray);
+            $copiedCount = 0;
+            $copyArray = array();
 
         } catch (\PDOException $e) {
             $strMsg = __METHOD__ . PHP_EOL;
@@ -656,9 +708,6 @@ class FromMySqlToPostgreSql
             $this->log("\t--Following MySQL query will return a data set, rejected by PostgreSQL:\n" . $sql . "\n");
         }
 
-        fclose($resourceCsv);
-        unlink($strAddrCsv);
-        unset($resourceCsv, $strAddrCsv, $arrRows);
         return $intRetVal;
     }
 
@@ -753,18 +802,16 @@ class FromMySqlToPostgreSql
                 . $strTableName . '": ' . $intRowsCnt . PHP_EOL
             );
 
-            for ($intOffset = 0; $intOffset < $intRowsCnt; $intOffset += $intRowsInChunk) {
-                $intRetVal += $this->populateTableWorker(
-                    $strTableName,
-                    $strSelectFieldList,
-                    $intOffset,
-                    $intRowsInChunk,
-                    $intRowsCnt,
-                    $intRetVal
-                );
-            }
-
-            unset($intRowsCnt, $floatChunksCnt, $intRowsInChunk);
+            $intRetVal = $this->populateTableData(
+                $strTableName,
+                $strSelectFieldList,
+                $intRowsInChunk,
+                $intRowsCnt
+            );
+            $this->log(
+                "\t" . '-- Total rows inserted into "' . $this->strSchema . '"."'
+                . $strTableName . '": ' . $intRetVal . PHP_EOL
+            );
 
         } catch (\PDOException $e) {
             $strMsg = __METHOD__ . PHP_EOL;
@@ -773,7 +820,7 @@ class FromMySqlToPostgreSql
         }
 
         echo PHP_EOL, PHP_EOL;
-        return $intRetVal;
+        return array($intRowsCnt, $intRowsCnt - $intRetVal);
     }
 
     /**
@@ -894,6 +941,9 @@ class FromMySqlToPostgreSql
 
                 if (isset($arrSqlReservedValues[$arrColumn['Default']])) {
                     $sql .= $arrSqlReservedValues[$arrColumn['Default']] . ';';
+                } else if (substr($arrColumn['Type'], 0, 3) === 'bit' && substr($arrColumn['Default'], 0, 2) === "b'") {
+                    // This is a defaultl for a bit column use PostgreSql syntax.
+                    $sql .= substr($arrColumn['Default'], 1) . "::bit;";
                 } else {
                     $sql .= is_numeric($arrColumn['Default'])
                           ? $arrColumn['Default'] . ';'
@@ -1381,53 +1431,49 @@ class FromMySqlToPostgreSql
         $strRetVal              = PHP_EOL;
         $intLargestTableTitle   = 0;
         $intLargestRecordsTitle = 0;
+        $intLargestFailedTitle  = 0;
         $intLargestTimeTitle    = 0;
 
-        array_unshift($this->arrSummaryReport, ['TABLE', 'RECORDS', 'DATA LOAD TIME']);
+        array_unshift($this->arrSummaryReport, ['TABLE', 'RECORDS', 'FAILED', 'DATA LOAD TIME']);
 
         foreach ($this->arrSummaryReport as $arrReport) {
             $intTableTitleLength    = strlen($arrReport[0]);
             $intRecordsTitleLength  = strlen($arrReport[1]);
-            $intTimeTitleLength     = strlen($arrReport[2]);
+            $intFailedTitleLength  = strlen($arrReport[2]);
+            $intTimeTitleLength     = strlen($arrReport[3]);
             $intLargestTableTitle   = $intLargestTableTitle > $intTableTitleLength ? $intLargestTableTitle : $intTableTitleLength;
             $intLargestRecordsTitle = $intLargestRecordsTitle > $intRecordsTitleLength ? $intLargestRecordsTitle : $intRecordsTitleLength;
+            $intLargestFailedTitle  = $intLargestFailedTitle > $intFailedTitleLength ? $intLargestFailedTitle : $intFailedTitleLength;
             $intLargestTimeTitle    = $intLargestTimeTitle > $intTimeTitleLength ? $intLargestTimeTitle : $intTimeTitleLength;
-
-            unset($arrReport, $intTableTitleLength, $intRecordsTitleLength, $intTimeTitleLength);
         }
 
         foreach ($this->arrSummaryReport as $arrReport) {
             $intSpace   = $intLargestTableTitle - strlen($arrReport[0]);
             $strRetVal .= "\t|  " . $arrReport[0];
 
-            for ($i = 0; $i < $intSpace; $i++) {
-                $strRetVal .= ' ';
-            }
-
+            $strRetVal .= str_repeat(' ', $intSpace);
             $strRetVal .= '  |  ';
 
             $intSpace   = $intLargestRecordsTitle - strlen($arrReport[1]);
             $strRetVal .= $arrReport[1];
 
-            for ($i = 0; $i < $intSpace; $i++) {
-                $strRetVal .= ' ';
-            }
-
+            $strRetVal .= str_repeat(' ', $intSpace);
             $strRetVal .= '  |  ';
 
-            $intSpace   = $intLargestTimeTitle - strlen($arrReport[2]);
+            $intSpace   = $intLargestFailedTitle - strlen($arrReport[2]);
             $strRetVal .= $arrReport[2];
 
-            for ($i = 0; $i < $intSpace; $i++) {
-                $strRetVal .= ' ';
-            }
+            $strRetVal .= str_repeat(' ', $intSpace);
+            $strRetVal .= '  |  ';
 
+            $intSpace   = $intLargestTimeTitle - strlen($arrReport[3]);
+            $strRetVal .= $arrReport[3];
+
+            $strRetVal .= str_repeat(' ', $intSpace);
             $strRetVal .= '  |' . PHP_EOL . "\t";
-            $intSpace   = $intLargestTableTitle + $intLargestRecordsTitle + $intLargestTimeTitle + 16;
+            $intSpace   = $intLargestTableTitle + $intLargestRecordsTitle + $intLargestFailedTitle + $intLargestTimeTitle + 21;
 
-            for ($i = 0; $i < $intSpace; $i++) {
-                $strRetVal .= '-';
-            }
+            $strRetVal .= str_repeat('-', $intSpace);
 
             $strRetVal .= PHP_EOL;
             unset($arrReport, $intSpace);
@@ -1460,13 +1506,14 @@ class FromMySqlToPostgreSql
             ) {
                 return false;
             } else {
-                $intRecords = $this->populateTable($arrTable['Tables_in_' . $this->strMySqlDbName]);
+                list($intRecords, $failedRecords) = $this->populateTable($arrTable['Tables_in_' . $this->strMySqlDbName]);
             }
 
             $floatEndCopy             = microtime(true);
             $this->arrSummaryReport[] = [
                 $this->strSchema . '.' . $arrTable['Tables_in_' . $this->strMySqlDbName],
                 $intRecords,
+                $failedRecords,
                 round(($floatEndCopy - $floatStartCopy), 3) . ' seconds',
             ];
 

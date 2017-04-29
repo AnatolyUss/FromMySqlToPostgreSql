@@ -88,17 +88,21 @@ The chunk size can be adjusted easily via configuration file.</li>
 <p>Current version is 1.4.2<br />
 (major version . improvements . bug fixes)</p>
 
+<h3>TESTING</h3>
+<p>The tests/ folder contains SQL files that exercise the migration tool to ensure it can
+process different types of input structures correctly.  To use these files you must
+setup a mysql server with them. An example might be <code>mysql < tests/foreign_key.sql</code>.
+You can then follow the use the USAGE section to create a migration script it runs without error.
+If you wish to add further tests to verify issues that are fixed, just add another SQL file
+and future developers will be able to confirm that changes don't cause any regressions.
+</p>
 
-<h3>TEST</h3>
-<p>Tested using MySql Community Server (5.6.21) and PostgreSql (9.3).<br />
-The entire process of migration 59.6 MB database (49 tables, 570750 rows),<br /> 
+<h3>PERFORMANCE RESULTS</h3>
+<p>Tested using MariaDB 10 and PostgreSql (9.6).<br />
+The entire process of migration 33Gb MB database (90 tables, approximately 72 million rows),<br />
 which includes data types mapping, creation of tables, constraints, indexes, <br />
 PKs, FKs, migration of data, garbage-collection and analyzing the newly created <br />
-PostgreSql database took 3 minutes 6 seconds.</p>
-<p>Tested using MySql Community Server (5.6.21) and PostgreSql (9.4).<br />
-The entire process of migration 3.1 GB database (56 tables, 8732967 rows),<br /> 
-with the same steps as above, took 2 hours and 10 minutes.</p> 
-
+PostgreSql database took 54 minutes.</p>
 
 <h3>LICENSE</h3>
 <p>FromMySqlToPostgreSql is available under "GNU GENERAL PUBLIC LICENSE" (v. 3) <br />
