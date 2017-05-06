@@ -566,13 +566,18 @@ class FromMySqlToPostgreSql
             unset($sql, $stmt);
 
             $strSqlCreateTable = 'CREATE TABLE "' . $this->strSchema . '"."' . $strTableName . '"(';
+            $arrSqlColumns = [];
 
             foreach ($arrColumns as $arrColumn) {
-                $strSqlCreateTable .= '"' . $arrColumn['Field'] . '" ' . \MapDataTypes::map($arrColumn['Type']) . ',';
-                unset($arrColumn);
+                $strColumnData = '"' . $arrColumn['Field'] . '" ' . \MapDataTypes::map($arrColumn['Type']);
+
+                if ('no' == strtolower($arrColumn['Null'])) {
+                    $strColumnData .= " NOT NULL";
+                }
+                $arrSqlColumns[] = $strColumnData;
             }
 
-            $strSqlCreateTable = substr($strSqlCreateTable, 0, -1) . ');';
+            $strSqlCreateTable .= implode(',', $arrSqlColumns) . ');';
             $stmt              = $this->pgsql->query($strSqlCreateTable);
             $boolRetVal        = true;
 
@@ -821,43 +826,6 @@ class FromMySqlToPostgreSql
 
         echo PHP_EOL, PHP_EOL;
         return array($intRowsCnt, $intRowsCnt - $intRetVal);
-    }
-
-    /**
-     * Define which columns of the given table can contain the "NULL" value.
-     * Set an appropriate constraint, if need.
-     *
-     * @param  string $strTableName
-     * @param  array  $arrColumns
-     * @return void
-     */
-    private function processNull($strTableName, array $arrColumns)
-    {
-        $sql = '';
-
-        $this->log(
-            PHP_EOL . "\t" . '-- Define "NULLs" for table: "' . $this->strSchema . '"."' . $strTableName . '"...' . PHP_EOL
-        );
-
-        foreach ($arrColumns as $arrColumn) {
-            try {
-                $this->connect();
-
-                if ('no' == strtolower($arrColumn['Null'])) {
-                    $sql = 'ALTER TABLE "' . $this->strSchema . '"."' . $strTableName
-                         . '" ALTER COLUMN "' . $arrColumn['Field'] . '" SET NOT NULL;';
-
-                    $stmt = $this->pgsql->query($sql);
-                    unset($sql, $stmt);
-                }
-            } catch (\PDOException $e) {
-                $this->generateError($e, __METHOD__ . PHP_EOL, $sql);
-            }
-
-            unset($arrColumn);
-        }
-
-        $this->log("\t-- Done." . PHP_EOL);
     }
 
     /**
@@ -1407,7 +1375,6 @@ class FromMySqlToPostgreSql
         }
 
         $this->processEnum($strTableName, $arrColumns);
-        $this->processNull($strTableName, $arrColumns);
         $this->processDefault($strTableName, $arrColumns);
         $this->createSequence($strTableName, $arrColumns);
         $this->processIndexAndKey($strTableName, $arrColumns);
