@@ -1184,11 +1184,20 @@ class FromMySqlToPostgreSql
                     $sql              = 'ALTER TABLE "' . $this->strSchema . '"."' . $strTableName . '" '
                                       . 'ADD PRIMARY KEY(' . implode(',', $arrIndex['column_name']) . ');';
 
+                } else if ($arrIndex['is_unique']) {
+                    // "schema_idxname_{integer}_idx" - is NOT a mistake.
+                    $strColumnName    = str_replace('"', '', $arrIndex['column_name'][0]) . $intCounter;
+                    $strIndexName     = $this->strSchema . '_' . $strTableName . '_' . $strColumnName . '_idx';
+                    $strColumnList    = '(' . implode(',', $arrIndex['column_name']) . ')';
+                    $strCurrentAction = 'uniqueindex';
+                    $sql              = 'ALTER TABLE "' . $this->strSchema . '"."' . $strTableName . '" ADD CONSTRAINT "'
+                                      . $strIndexName . '" UNIQUE '
+                                      . $strColumnList . ";";
                 } else {
                     // "schema_idxname_{integer}_idx" - is NOT a mistake.
                     $strColumnName    = str_replace('"', '', $arrIndex['column_name'][0]) . $intCounter;
                     $strCurrentAction = 'index';
-                    $sql              = 'CREATE ' . ($arrIndex['is_unique'] ? 'UNIQUE ' : '') . 'INDEX "'
+                    $sql              = 'CREATE  INDEX "'
                                       . $this->strSchema . '_' . $strTableName . '_' . $strColumnName . '_idx" ON "'
                                       . $this->strSchema . '"."' . $strTableName . '" ' . $arrIndex['Index_type']
                                       . ' (' . implode(',', $arrIndex['column_name']) . ');';
