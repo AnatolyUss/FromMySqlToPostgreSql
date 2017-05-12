@@ -170,7 +170,7 @@ class MapDataTypes
 
         'point' => [
             'increased_size'           => '',
-            'type'                     => 'point',
+            'type'                     => 'geometry',
             'mySqlVarLenPgSqlFixedLen' => false,
         ],
 
