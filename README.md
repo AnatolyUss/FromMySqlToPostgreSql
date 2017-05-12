@@ -99,7 +99,7 @@ and future developers will be able to confirm that changes don't cause any regre
 
 <h3>PERFORMANCE RESULTS</h3>
 <p>Tested using MariaDB 10 and PostgreSql (9.6).<br />
-The entire process of migration 33Gb MB database (90 tables, approximately 72 million rows),<br />
+The entire process of migration 33 GB database (90 tables, approximately 72 million rows),<br />
 which includes data types mapping, creation of tables, constraints, indexes, <br />
 PKs, FKs, migration of data, garbage-collection and analyzing the newly created <br />
 PostgreSql database took 54 minutes.</p>
