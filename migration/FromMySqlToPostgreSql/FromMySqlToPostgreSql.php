@@ -639,7 +639,6 @@ class FromMySqlToPostgreSql
      * @param  string $strTableName
      * @param  string $strSelectFieldList
      * @param  array  $arrColumns
-     * @param  int    $intOffset
      * @param  int    $intRowsInChunk
      * @param  int    $intRowsCnt
      * @return int
@@ -647,7 +646,7 @@ class FromMySqlToPostgreSql
     private function populateTableData(
         $strTableName,
         $strSelectFieldList,
-        $arrColumns,
+        array $arrColumns,
         $intRowsInChunk,
         $intRowsCnt
     ) {
