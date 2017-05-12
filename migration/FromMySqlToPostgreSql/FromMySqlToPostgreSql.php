@@ -181,7 +181,7 @@ class FromMySqlToPostgreSql
     private function extractDbName($strConString)
     {
         $strRetVal  = '';
-        $arrParams  = explode(',', $strConString);
+        $arrParams  = explode(',', $strConString, 3);
         $arrParams2 = explode(';', $arrParams[0]);
 
         foreach ($arrParams2 as $strPair) {
@@ -296,14 +296,14 @@ class FromMySqlToPostgreSql
     private function connect()
     {
         if (empty($this->mysql)) {
-            $arrSrcInput = explode(',', $this->strSourceConString);
+            $arrSrcInput = explode(',', $this->strSourceConString, 3);
             $this->mysql = new \PDO($arrSrcInput[0], $arrSrcInput[1], $arrSrcInput[2]);
             $this->mysql->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
             $this->mysql->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         }
 
         if (empty($this->pgsql)) {
-            $arrDestInput = explode(',', $this->strTargetConString);
+            $arrDestInput = explode(',', $this->strTargetConString, 3);
             $this->pgsql  = new \PDO($arrDestInput[0], $arrDestInput[1], $arrDestInput[2]);
             $this->pgsql->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
             $this->pgsql->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
