@@ -19,6 +19,8 @@ CREATE TABLE bigints (field bigint(50) unsigned);
 INSERT INTO bigints VALUES (0);
 INSERT INTO bigints VALUES (NULL);
 INSERT INTO bigints VALUES (18446744073709551615);
+-- Check unique indexes are moved.
+CREATE UNIQUE INDEX unique_index ON bigints (field);
 
 -- Bits
 DROP TABLE IF EXISTS bitfield;
