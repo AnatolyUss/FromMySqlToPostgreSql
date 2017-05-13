@@ -584,6 +584,25 @@ class FromMySqlToPostgreSql
             $this->generateError($e, $strMsg, $sql);
             unset($strMsg);
         }
+
+        try {
+            $sql        = 'SHOW TABLE STATUS WHERE Name="' . $strTableName . '";';
+            $stmt       = $this->mysql->query($sql);
+            $arrTableData = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!empty($arrTableData['Comment'])) {
+		$sql = 'COMMENT ON TABLE "' . $this->strSchema . '"."' . $strTableName
+                     . '" IS ' . $this->pgsql->quote($arrTableData['Comment']);
+		$this->pgsql->query($sql);
+            }
+            unset($sql, $stmt);
+        } catch (\PDOException $e) {
+            // Log the error but don't fail because a missing table comment is not critical to migration.
+            $strMsg = __METHOD__ . PHP_EOL . "\t" . '-- Cannot add comment "' . $this->strSchema . '"."' .  $strTableName .  '".';
+            $this->generateError($e, $strMsg, $sql);
+            unset($strMsg);
+        }
+
         return $boolRetVal;
     }
 
@@ -887,7 +906,7 @@ class FromMySqlToPostgreSql
             try {
                 $this->connect();
                 $sql = 'COMMENT ON COLUMN "' . $this->strSchema . '"."' . $strTableName . '"."'
-                     . $arrColumn['Field'] . '" IS \'' . $arrColumn['Comment'] . '\';';
+                     . $arrColumn['Field'] . '" IS ' . $this->pgsql->quote($arrColumn['Comment']);
 
                  $stmt = $this->pgsql->query($sql);
 
