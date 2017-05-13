@@ -19,6 +19,8 @@ CREATE TABLE bigints (field bigint(50) unsigned);
 INSERT INTO bigints VALUES (0);
 INSERT INTO bigints VALUES (NULL);
 INSERT INTO bigints VALUES (18446744073709551615);
+-- Verify column comments
+ALTER TABLE `bigints` CHANGE `field` `field` bigint(50) unsigned COMMENT 'column comment with \' in it.';
 -- Check unique indexes are moved.
 CREATE UNIQUE INDEX unique_index ON bigints (field);
 
@@ -53,6 +55,8 @@ INSERT INTO blobfield VALUES (x'00');
 INSERT INTO blobfield VALUES (x'08');
 INSERT INTO blobfield VALUES (x'0A');
 INSERT INTO blobfield VALUES (x'0D');
+-- Verify table comments
+ALTER TABLE blobfield COMMENT = 'This is test comment for confirming table comments are migrated with \' included.';
 
 -- View with brackets
 DROP VIEW IF EXISTS badview;
