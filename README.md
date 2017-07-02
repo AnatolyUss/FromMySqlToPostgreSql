@@ -47,6 +47,7 @@ The chunk size can be adjusted easily via configuration file.</li>
 <li> <b>PDO_PGSQL</b> should be installed and enabled </li>
 <li> <b>mbstring</b> should be installed and enabled </li>
 <li> <b>register_argc_argv</b> should be enabled (check php.ini).</li>
+<li> <b>postgis</b> should be installed and enabled to migrate spatial data (geometry type columns).</li>
 </ul>
 
 <h3>USAGE</h3>
