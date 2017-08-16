@@ -21,10 +21,6 @@ However, if you're not into Node.js, you can still use old and proven FromMySqlT
    MySql data types to corresponding PostgreSql data types, creates constraints,
    indexes, primary and foreign keys exactly as they were before migration.</li>
 
-<li>Ability to migrate big databases - in order to reduce RAM consumption <br/> 
-FromMySqlToPostgreSql will split each table's data into several chunks. <br />
-The chunk size can be adjusted easily via configuration file.</li>
-
 <li> Speed of data transfer - in order to migrate data fast <br />
    FromMySqlToPostgreSql uses PostgreSQL COPY protocol.<br />
 </li>
