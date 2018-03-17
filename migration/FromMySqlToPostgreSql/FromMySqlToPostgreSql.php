@@ -409,7 +409,7 @@ class FromMySqlToPostgreSql
 
             foreach ($arrResult as $arrRow) {
                 if ('BASE TABLE' == $arrRow['Table_type']) {
-	            echo 'table = ' . $arrRow['Tables_in_' . $this->strMySqlDbName];
+	            //echo 'table = ' . $arrRow['Tables_in_' . $this->strMySqlDbName];
 		    if($this->tablesList==null || array_search($arrRow['Tables_in_' . $this->strMySqlDbName], $this->tablesList)!=false){
                     	$this->arrTablesToMigrate[] = $arrRow;
 		    }
