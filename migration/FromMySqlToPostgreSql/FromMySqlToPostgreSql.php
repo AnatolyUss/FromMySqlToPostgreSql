@@ -68,6 +68,13 @@ class FromMySqlToPostgreSql
     private $strSourceConString;
 
     /**
+     * MySql list of tables.
+     *
+     * @var string
+     */
+    private $tablesList;
+
+    /**
      * PostgreSql connection string.
      *
      * @var string
@@ -233,6 +240,12 @@ class FromMySqlToPostgreSql
         $this->floatDataChunkSize          = $this->floatDataChunkSize < 1 ? 1 : $this->floatDataChunkSize;
         $this->strSourceConString          = $arrConfig['source'];
         $this->strTargetConString          = $arrConfig['target'];
+	$this->tablesList		   = $arrConfig['tablesList'];
+	if($this->tablesList==null || $this->tablesList==''){
+	    	$this->tablesList = null;
+	}else{
+		$this->tablesList = explode(',', $this->tablesList);
+	}
         $this->mysql                       = null;
         $this->pgsql                       = null;
         $this->strMySqlDbName              = $this->extractDbName($this->strSourceConString);
@@ -401,7 +414,9 @@ class FromMySqlToPostgreSql
 
             foreach ($arrResult as $arrRow) {
                 if ('BASE TABLE' == $arrRow['Table_type']) {
-                    $this->arrTablesToMigrate[] = $arrRow;
+		    if($this->tablesList==null || array_search($this->tablesList, $arrRow['Tables_in_' . $this->strMySqlDbName])!=false){
+                    	$this->arrTablesToMigrate[] = $arrRow;
+		    }
                 } elseif ('VIEW' == $arrRow['Table_type']) {
                     $this->arrViewsToMigrate[] = $arrRow;
                 }
