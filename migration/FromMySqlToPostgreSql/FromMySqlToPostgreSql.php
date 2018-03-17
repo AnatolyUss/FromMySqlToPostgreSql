@@ -241,11 +241,6 @@ class FromMySqlToPostgreSql
         $this->strSourceConString          = $arrConfig['source'];
         $this->strTargetConString          = $arrConfig['target'];
 	$this->tablesList		   = $arrConfig['tablesList'];
-	if($this->tablesList==null || $this->tablesList==''){
-	    	$this->tablesList = null;
-	}else{
-		$this->tablesList = explode(',', $this->tablesList);
-	}
         $this->mysql                       = null;
         $this->pgsql                       = null;
         $this->strMySqlDbName              = $this->extractDbName($this->strSourceConString);
