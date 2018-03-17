@@ -6,6 +6,11 @@
     ],
     "source" : "mysql:host=localhost;port=3306;charset=UTF8;dbname=your_db_name,your_user_name,your_password",
     
+    "tablesList_description": [
+        "List of tables to migrate. Can be empty for migrate all tables."
+    ],
+    "tablesList": "",
+    
     "target_description" : [
         "Connection string to your PostgreSql database",
         "Please ensure, that you have defined your connection string properly.",
