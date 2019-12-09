@@ -1616,7 +1616,7 @@ class FromMySqlToPostgreSql
          * Create a database schema.
          */
         if (!$this->createSchema()) {
-            $this->log('-- Script is terminated.' . PHP_EOL);
+            $this->log('-- Script is terminated. Could not create schema' . PHP_EOL);
             exit;
         } else {
             $this->log('-- New schema "' . $this->strSchema . '" was successfully created...' . PHP_EOL);
