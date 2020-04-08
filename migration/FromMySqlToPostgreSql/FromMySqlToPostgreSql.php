@@ -1370,51 +1370,6 @@ class FromMySqlToPostgreSql
     }
 
     /**
-     * Runs "vacuum full" and "ANALYZE" for given table.
-     *
-     * @param  string $strTableName
-     * @return void
-     */
-    private function runVacuumFullAndAnalyze($strTableName)
-    {
-        $sql = '';
-
-        $this->log(
-            "\t" . '-- Running "VACUUM FULL and ANALYZE" query for table "'
-            . $this->strSchema . '"."' . $strTableName . '"...' . PHP_EOL
-        );
-
-        try {
-            $this->connect();
-            $sql  = 'VACUUM (FULL, ANALYZE) "' . $this->strSchema . '"."' . $strTableName . '";';
-            $stmt = $this->pgsql->query($sql);
-
-            if (false === $stmt) {
-                $this->log(
-                    "\t" . '-- Failed when run "VACUUM FULL and ANALYZE" query for table "'
-                    . $this->strSchema . '"."' . $strTableName . '"...' . PHP_EOL
-                );
-
-            } else {
-                $this->log(
-                    "\t" . '-- "VACUUM FULL and ANALYZE" procedure for table "'
-                    . $this->strSchema . '"."' . $strTableName . '" has been successfully accomplished...' . PHP_EOL
-                );
-            }
-
-            unset($stmt, $sql);
-
-        } catch (\PDOException $e) {
-            $strMsg = __METHOD__ . PHP_EOL . "\t"
-                    . '-- Error occurred when tried to run "VACUUM FULL and ANALYZE" query for table "'
-                    . $this->strSchema . '"."' . $strTableName . '"...' . PHP_EOL;
-
-            $this->generateError($e, $strMsg, $sql);
-            unset($strMsg);
-        }
-    }
-
-    /**
      * Set constraints (excluding foreign key constraints) for given table.
      *
      * @param  string $strTableName
@@ -1571,13 +1526,12 @@ class FromMySqlToPostgreSql
     }
 
     /**
-     * Set foreign key constraints, then run "vacuum full" and "ANALYZE" for each table.
+     * Set foreign key constraints.
      */
-    private function createForeignKeysAndRunVacuumFullAndAnalyze()
+    private function createForeignKeys()
     {
         foreach ($this->arrTablesToMigrate as $arrTable) {
             $this->processForeignKey($arrTable['Tables_in_' . $this->strMySqlDbName]);
-            $this->runVacuumFullAndAnalyze($arrTable['Tables_in_' . $this->strMySqlDbName]);
             unset($arrTable);
         }
     }
@@ -1637,7 +1591,7 @@ class FromMySqlToPostgreSql
 
         if (!$this->isDataOnly) {
             $this->createConstraints();
-            $this->createForeignKeysAndRunVacuumFullAndAnalyze();
+            $this->createForeignKeys();
             $this->createViews();
         }
 

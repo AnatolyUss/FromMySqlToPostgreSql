@@ -82,7 +82,7 @@ However, if you're not into Node.js, you can still use old and proven FromMySqlT
    <a href="mailto:anatolyuss@gmail.com?subject=FromMySqlToPostgreSql">anatolyuss@gmail.com</a></p>
 
 <h3>VERSION</h3>
-<p>Current version is 1.4.2<br />
+<p>Current version is 1.5.0<br />
 (major version . improvements . bug fixes)</p>
 
 <h3>TESTING</h3>
