@@ -34,6 +34,9 @@ However, if you're not into Node.js, you can still use old and proven FromMySqlT
 <li>
    Ability to transfer only a data (in case of an existing database).
 </li>
+<li>
+   Ability to transfer list of tables.
+</li>
 </ul>
 
 <h3>SYSTEM REQUIREMENTS</h3>
