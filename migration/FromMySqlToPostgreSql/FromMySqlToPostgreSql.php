@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is a part of "FromMySqlToPostgreSql" - the database migration tool.
  *
@@ -207,14 +208,14 @@ class FromMySqlToPostgreSql
     {
         if (!isset($arrConfig['source'])) {
             echo PHP_EOL, '-- Cannot perform a migration due to missing source database (MySql) connection string.', PHP_EOL,
-                 '-- Please, specify source database (MySql) connection string, and run the tool again.', PHP_EOL;
+            '-- Please, specify source database (MySql) connection string, and run the tool again.', PHP_EOL;
 
             exit;
         }
 
         if (!isset($arrConfig['target'])) {
             echo PHP_EOL, '-- Cannot perform a migration due to missing target database (PostgreSql) connection string.', PHP_EOL,
-                 '-- Please, specify target database (PostgreSql) connection string, and run the tool again.', PHP_EOL;
+            '-- Please, specify target database (PostgreSql) connection string, and run the tool again.', PHP_EOL;
 
             exit;
         }
@@ -244,9 +245,9 @@ class FromMySqlToPostgreSql
 
             if (!file_exists($this->strTemporaryDirectory)) {
                 echo PHP_EOL,
-                     '-- Cannot perform a migration due to impossibility to create "temporary_directory": ',
-                     $this->strTemporaryDirectory,
-                     PHP_EOL;
+                '-- Cannot perform a migration due to impossibility to create "temporary_directory": ',
+                $this->strTemporaryDirectory,
+                PHP_EOL;
 
                 exit;
             }
@@ -557,13 +558,14 @@ class FromMySqlToPostgreSql
         $sql        = '';
 
         try {
+            $sql        = 'SHOW FULL COLUMNS FROM `' . $strTableName . '`;';
+
             $this->log(PHP_EOL . '-- Currently processing table: ' . $strTableName . '...' . PHP_EOL);
             $this->connect();
 
-            $sql        = 'SHOW FULL COLUMNS FROM `' . $strTableName . '`;';
             $stmt       = $this->mysql->query($sql);
             $arrColumns = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            unset($sql, $stmt);
+            unset($stmt);
 
             $strSqlCreateTable = 'CREATE TABLE "' . $this->strSchema . '"."' . $strTableName . '"(';
 
@@ -591,9 +593,9 @@ class FromMySqlToPostgreSql
             $arrTableData = $stmt->fetch(\PDO::FETCH_ASSOC);
 
             if (!empty($arrTableData['Comment'])) {
-		$sql = 'COMMENT ON TABLE "' . $this->strSchema . '"."' . $strTableName
-                     . '" IS ' . $this->pgsql->quote($arrTableData['Comment']);
-		$this->pgsql->query($sql);
+                $sql = 'COMMENT ON TABLE "' . $this->strSchema . '"."' . $strTableName
+                             . '" IS ' . $this->pgsql->quote($arrTableData['Comment']);
+                $this->pgsql->query($sql);
             }
             unset($sql, $stmt);
         } catch (\PDOException $e) {
@@ -628,7 +630,8 @@ class FromMySqlToPostgreSql
      * @param  array  $copyArray
      * @return int    Number of rows inserted.
      */
-    private function copySaveRows($strTableName, $copyArray) {
+    private function copySaveRows($strTableName, $copyArray)
+    {
         $intRetVal = 0;
         // Attempt copy, if it failes, do one at a time to ensure we find all the errors.
         // If the data is valid, we perform fast, otherwise we ensure correctness at the cost of speed.
@@ -703,10 +706,10 @@ class FromMySqlToPostgreSql
                 foreach ($arrRow as $name => $value) {
                     if (is_null($value)) {
                         $arrSanitizedCsvData[] = '\N';
-                    } else if (isset($arrBinaryFields[$name])) {
+                    } elseif (isset($arrBinaryFields[$name])) {
                         // Binary types need \x for hex escaping and will receive hex from the MySQL query.
                         $arraySanitizedCsvData[] = '\x'.$value;
-                    } else if (mb_check_encoding($value, $this->strEncoding)) {
+                    } elseif (mb_check_encoding($value, $this->strEncoding)) {
                         $arrSanitizedCsvData[] = $this->escapeValue($value);
                     } else {
                         $value = mb_convert_encoding($value, $this->strEncoding);
@@ -908,13 +911,13 @@ class FromMySqlToPostgreSql
                 $sql = 'COMMENT ON COLUMN "' . $this->strSchema . '"."' . $strTableName . '"."'
                      . $arrColumn['Field'] . '" IS ' . $this->pgsql->quote($arrColumn['Comment']);
 
-                 $stmt = $this->pgsql->query($sql);
+                $stmt = $this->pgsql->query($sql);
 
-                 if ($stmt === false) {
-                     $this->log("\t" . '-- Cannot create comment on column "' . $arrColumn['Field'] . '"...' . PHP_EOL);
-                 } else {
-                     $this->log("\t" . '-- Comment on column "' . $arrColumn['Field'] . '" has set...' . PHP_EOL);
-                 }
+                if ($stmt === false) {
+                    $this->log("\t" . '-- Cannot create comment on column "' . $arrColumn['Field'] . '"...' . PHP_EOL);
+                } else {
+                    $this->log("\t" . '-- Comment on column "' . $arrColumn['Field'] . '" has set...' . PHP_EOL);
+                }
 
             } catch (\PDOException $e) {
                 $this->generateError($e, __METHOD__ . PHP_EOL, $sql);
@@ -968,7 +971,7 @@ class FromMySqlToPostgreSql
 
                 if (isset($arrSqlReservedValues[$arrColumn['Default']])) {
                     $sql .= $arrSqlReservedValues[$arrColumn['Default']] . ';';
-                } else if (substr($arrColumn['Type'], 0, 3) === 'bit' && substr($arrColumn['Default'], 0, 2) === "b'") {
+                } elseif (substr($arrColumn['Type'], 0, 3) === 'bit' && substr($arrColumn['Default'], 0, 2) === "b'") {
                     // This is a defaultl for a bit column use PostgreSql syntax.
                     $sql .= substr($arrColumn['Default'], 1) . "::bit;";
                 } else {
@@ -1211,7 +1214,7 @@ class FromMySqlToPostgreSql
                     $sql              = 'ALTER TABLE "' . $this->strSchema . '"."' . $strTableName . '" '
                                       . 'ADD PRIMARY KEY(' . implode(',', $arrIndex['column_name']) . ');';
 
-                } else if ($arrIndex['is_unique']) {
+                } elseif ($arrIndex['is_unique']) {
                     // "schema_idxname_{integer}_idx" - is NOT a mistake.
                     $strColumnName    = str_replace('"', '', $arrIndex['column_name'][0]) . $intCounter;
                     $strIndexName     = $this->strSchema . '_' . $strTableName . '_' . $strColumnName . '_idx';
